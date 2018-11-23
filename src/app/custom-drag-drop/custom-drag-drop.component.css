@@ -1,0 +1,9 @@
+.container {
+  position: relative;
+}
+
+.draggable {
+  position: absolute;
+  cursor: move;
+  border: 1px solid black;
+}
