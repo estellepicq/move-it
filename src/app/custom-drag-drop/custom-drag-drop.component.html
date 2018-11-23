@@ -1,4 +1,10 @@
-<div class="container">
-  <div appDraggable class="draggable" style="width: 50px; height: 50px; top: 0; left: 0;"></div>
-  <div appDraggable class="draggable" style="width: 100px; height: 100px; top: 200px; left: 400px;"></div>
+<div class="container" #bounds>
+  <div appDraggable draggableFrom="handle1" class="draggable" style="width: 80px; height: 80px; top: 0; left: 0;">
+    <div class="draggable-header" id="handle1">Draggable 1</div>
+    <div class="draggable-container"></div>
+  </div>
+  <div appDraggable draggableFrom="handle2" [bounds]="bounds" class="draggable" style="width: 100px; height: 100px; top: 200px; left: 400px;">
+    <div class="draggable-header" id="handle2">Draggable 2</div>
+    <div class="draggable-container"></div>
+  </div>
 </div>

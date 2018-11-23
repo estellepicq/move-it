@@ -1,4 +1,8 @@
-html, body {
+html,
+body {
   margin: 0;
   height: 5000px;
 }
+
+.no-select ::selection { background: transparent; }
+.no-select ::-moz-selection { background: transparent; }
