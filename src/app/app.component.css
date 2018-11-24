@@ -1,4 +1,12 @@
 .header {
-  height: 200px;
-  background: #ccc;
+  height: 125px;
+  background: #393f4d;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header h1 {
+  margin: 0;
 }
