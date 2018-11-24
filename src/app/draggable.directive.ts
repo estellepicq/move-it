@@ -1,11 +1,10 @@
 import { Directive, ElementRef, Input, OnInit } from '@angular/core';
 import { Observable, fromEvent } from 'rxjs';
 import { map, takeUntil, mergeMap, filter, tap } from 'rxjs/operators';
-import { ClassGetter } from '@angular/compiler/src/output/output_ast';
 
 interface MousePosition {
-  top: number;
   left: number;
+  top: number;
 }
 
 @Directive({
@@ -43,10 +42,13 @@ export class DraggableDirective implements OnInit {
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
 
     this.mousedrag$ = this.mousedown$.pipe(
-      // only from left button
+      // Only from left button
       filter(mdEvent => mdEvent.button === 0),
       tap(() => document.body.classList.add('no-select')),
       mergeMap(mdEvent => {
+        const target = mdEvent.target as HTMLElement;
+        // Disable native behavior (ex: images can be dragged)
+        target.style.pointerEvents = 'none';
         // get pointer start position
         const startX = mdEvent.clientX - +this.draggable.getAttribute('data-x');
         const startY = mdEvent.pageY - +this.draggable.getAttribute('data-y');
@@ -63,6 +65,8 @@ export class DraggableDirective implements OnInit {
             tap(() => {
               document.body.classList.remove('no-select');
               this.clearSelection();
+              // Enable native behavior (ex: images can be dragged)
+              target.style.pointerEvents = 'unset';
             })
           ))
         );
@@ -70,20 +74,21 @@ export class DraggableDirective implements OnInit {
     );
 
     this.mousedrag$.subscribe(pos => {
-      // get container bounds
+      // Get container bounds
       let containerWidth = Infinity;
       let containerHeight = Infinity;
       let containerTop = 0;
       let containerLeft = 0;
       if (this.bounds) {
-        containerWidth = this.bounds.getBoundingClientRect().width;
-        containerHeight = this.bounds.getBoundingClientRect().height;
-        containerLeft = this.bounds.getBoundingClientRect().left;
-        containerTop = this.bounds.getBoundingClientRect().top;
+        const containerRect = this.bounds.getBoundingClientRect();
+        containerWidth = containerRect.width;
+        containerHeight = containerRect.height;
+        containerLeft = containerRect.left;
+        containerTop = containerRect.top;
       }
-      // get draggable bounds
-      const draggableWidth = this.draggable.getBoundingClientRect().width;
-      // Logic here
+      // Get draggable bounds
+      const draggableRect = this.draggable.getBoundingClientRect();
+      // Get left and top position from the mouse
       let finalLeft: number = pos.left;
       let finalTop: number = pos.top;
         if (this.draggablePosition === 'absolute'
@@ -92,15 +97,24 @@ export class DraggableDirective implements OnInit {
             || this.draggablePosition === 'relative') { // top and left properties can apply
                 this.bounds.style.position = 'relative';
                 if (pos.left < 0) { finalLeft = 0; }
-                if (pos.left > containerWidth - draggableWidth) { finalLeft = containerWidth - draggableWidth; }
+                if (pos.left > containerWidth - draggableRect.width) { finalLeft = containerWidth - draggableRect.width; }
                 if (pos.top < 0) { finalTop = 0; }
                 if (pos.top > containerHeight) { finalTop = containerHeight; }
                 this.draggable.style.left = finalLeft + 'px';
                 this.draggable.style.top = finalTop + 'px';
         } else { // top and left cannot apply - use transform instead
-          if (pos.left <  containerLeft - this.draggable.offsetLeft) { finalLeft = containerLeft - this.draggable.offsetLeft; }
-          if (pos.left >  containerWidth - draggableWidth) { finalLeft = containerWidth - draggableWidth; }
-          if (pos.top <  containerTop - this.draggable.offsetTop) { finalTop = containerTop - this.draggable.offsetTop; }
+          if (pos.left <  containerLeft - this.draggable.offsetLeft) {
+            finalLeft = containerLeft - this.draggable.offsetLeft;
+          }
+          if (pos.left >  containerWidth - draggableRect.width - this.draggable.offsetLeft + containerLeft) {
+            finalLeft = containerWidth - draggableRect.width - this.draggable.offsetLeft + containerLeft;
+          }
+          if (pos.top <  containerTop - this.draggable.offsetTop) {
+            finalTop = containerTop - this.draggable.offsetTop;
+          }
+          if (pos.top >  containerHeight - draggableRect.height - this.draggable.offsetTop + containerTop) {
+            finalTop = containerHeight - draggableRect.height - this.draggable.offsetTop + containerTop;
+          }
           this.draggable.style.transform = 'translate(' + finalLeft + 'px, ' + finalTop + 'px)';
         }
         // In each case, set data-x and data-y
