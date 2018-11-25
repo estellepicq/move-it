@@ -16,7 +16,7 @@ export class DraggableDirective implements OnInit {
   @Input() bounds: HTMLElement;
   draggable: HTMLElement;
   handle: HTMLElement;
-  draggablePosition: string;
+  draggableAbsolutePosition: boolean;
   mousedown$: Observable<MouseEvent>;
   mousemove$: Observable<MouseEvent>;
   mouseup$: Observable<MouseEvent>;
@@ -29,7 +29,15 @@ export class DraggableDirective implements OnInit {
   ngOnInit() {
     // Find draggable element
     this.draggable = this.el.nativeElement;
-    this.draggablePosition = window.getComputedStyle(this.draggable).getPropertyValue('position');
+
+    // Is draggable position absolute
+    const draggablePosition = window.getComputedStyle(this.draggable).getPropertyValue('position');
+    if (draggablePosition === 'absolute'
+        || draggablePosition === 'fixed'
+        || draggablePosition === 'sticky'
+        || draggablePosition === 'relative') {
+      this.draggableAbsolutePosition = true;
+    }
 
     // Handle from a specific part of draggable element
     this.handle = this.draggable;
@@ -50,14 +58,24 @@ export class DraggableDirective implements OnInit {
         // Disable native behavior (ex: images can be dragged)
         target.style.pointerEvents = 'none';
         // get pointer start position
+        if (this.draggableAbsolutePosition) {
+          const offsetX = this.draggable.getBoundingClientRect().left - this.draggable.parentElement.getBoundingClientRect().left;
+          const offsetY = this.draggable.getBoundingClientRect().top - this.draggable.parentElement.getBoundingClientRect().top;
+          this.draggable.setAttribute('data-x', offsetX.toString());
+          this.draggable.setAttribute('data-y', offsetY.toString());
+        }
         const startX = mdEvent.clientX - +this.draggable.getAttribute('data-x');
         const startY = mdEvent.pageY - +this.draggable.getAttribute('data-y');
         // listen to mousemove
         return this.mousemove$.pipe(
           map(mmEvent => {
+            let scrollY = 0;
+            if (this.bounds) {
+              scrollY = this.bounds.scrollTop;
+            }
             return {
               left: mmEvent.clientX - startX,
-              top: mmEvent.pageY - startY,
+              top: mmEvent.pageY - startY + scrollY,
             };
           }),
           // stop listening to mousemove on mouseup
@@ -82,7 +100,7 @@ export class DraggableDirective implements OnInit {
       if (this.bounds) {
         const containerRect = this.bounds.getBoundingClientRect();
         containerWidth = containerRect.width;
-        containerHeight = containerRect.height;
+        containerHeight = this.bounds.scrollHeight;
         containerLeft = containerRect.left;
         containerTop = containerRect.top;
       }
@@ -91,28 +109,26 @@ export class DraggableDirective implements OnInit {
       // Get left and top position from the mouse
       let finalLeft: number = pos.left;
       let finalTop: number = pos.top;
-        if (this.draggablePosition === 'absolute'
-            || this.draggablePosition === 'fixed'
-            || this.draggablePosition === 'sticky'
-            || this.draggablePosition === 'relative') { // top and left properties can apply
+        if (this.draggableAbsolutePosition) { // top and left properties can apply
+              // In case bound parent has not relative position
                 this.bounds.style.position = 'relative';
-                if (pos.left < 0) { finalLeft = 0; }
-                if (pos.left > containerWidth - draggableRect.width) { finalLeft = containerWidth - draggableRect.width; }
-                if (pos.top < 0) { finalTop = 0; }
-                if (pos.top > containerHeight) { finalTop = containerHeight; }
+                if (finalLeft < 0) { finalLeft = 0; }
+                if (finalLeft > containerWidth - draggableRect.width) { finalLeft = containerWidth - draggableRect.width; }
+                if (finalTop < 0) { finalTop = 0; }
+                if (finalTop > containerHeight) { finalTop = containerHeight; }
                 this.draggable.style.left = finalLeft + 'px';
                 this.draggable.style.top = finalTop + 'px';
         } else { // top and left cannot apply - use transform instead
-          if (pos.left <  containerLeft - this.draggable.offsetLeft) {
+          if (finalLeft <  containerLeft - this.draggable.offsetLeft) {
             finalLeft = containerLeft - this.draggable.offsetLeft;
           }
-          if (pos.left >  containerWidth - draggableRect.width - this.draggable.offsetLeft + containerLeft) {
+          if (finalLeft >  containerWidth - draggableRect.width - this.draggable.offsetLeft + containerLeft) {
             finalLeft = containerWidth - draggableRect.width - this.draggable.offsetLeft + containerLeft;
           }
-          if (pos.top <  containerTop - this.draggable.offsetTop) {
+          if (finalTop <  containerTop - this.draggable.offsetTop) {
             finalTop = containerTop - this.draggable.offsetTop;
           }
-          if (pos.top >  containerHeight - draggableRect.height - this.draggable.offsetTop + containerTop) {
+          if (finalTop >  containerHeight - draggableRect.height - this.draggable.offsetTop + containerTop) {
             finalTop = containerHeight - draggableRect.height - this.draggable.offsetTop + containerTop;
           }
           this.draggable.style.transform = 'translate(' + finalLeft + 'px, ' + finalTop + 'px)';

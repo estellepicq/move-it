@@ -1,7 +1,7 @@
 <div class="container">
 
     <div class="container1" #bounds1>
-      <h3 style="width:100%;">Small container</h3>
+      <h3 style="width:100%;">Simple container</h3>
       <div appDraggable [bounds]="bounds1" class="draggable">
         <img src="assets/redpanda.jpg" alt="Red Panda" width=100 height=100>
       </div>
@@ -11,14 +11,21 @@
     </div>
 
     <div class="container2" #bounds2>
-      <h3 style="width:100%;">High container</h3>
-      <div appDraggable draggableFrom="handle1" [bounds]="bounds2" class="draggable">
+      <h3 style="width:100%;">Scrollable container</h3>
+      <div appDraggable draggableFrom="handle1" [bounds]="bounds2" class="draggable" style="top: 40px; left: 60px;">
         <div class="draggable-header" id="handle1">Move it 1</div>
         <div class="draggable-container"></div>
       </div>
-      <div appDraggable draggableFrom="handle2" [bounds]="bounds2" class="draggable">
+      <div appDraggable draggableFrom="handle2" [bounds]="bounds2" class="draggable" style="top: 1000px; left: 100px;">
         <div class="draggable-header" id="handle2">Move it 2</div>
         <div class="draggable-container"></div>
+      </div>
+      <div class="text">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum
       </div>
     </div>
 
