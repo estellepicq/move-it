@@ -1,22 +1,24 @@
 .container {
   display: flex;
   padding: 20px;
+  justify-content: space-around;
 }
 
 .container1 {
-  width: 40%;
+  min-width: 400px;
+  width: 400px;
   height: 300px;
   background: #9ba0b8;
   display: flex;
   justify-content: space-around;
   flex-wrap: wrap;
-  margin: 0px 50px;
   text-align: center;
   border: 2px solid black;
 }
 
 .container2 {
-  width: 40%;
+  min-width: 400px;
+  width: 400px;
   background: #9ba0b8;
   text-align: center;
   position: relative;
@@ -57,7 +59,7 @@
   background: #9ba0b8;
 }
 
-.draggable img {
+img {
   border-radius: 5px;
   cursor: grab;
 }

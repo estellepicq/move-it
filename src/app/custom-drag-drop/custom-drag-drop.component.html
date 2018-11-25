@@ -2,21 +2,17 @@
 
     <div class="container1" #bounds1>
       <h3 style="width:100%;">Simple container</h3>
-      <div appDraggable [bounds]="bounds1" class="draggable">
-        <img src="assets/redpanda.jpg" alt="Red Panda" width=100 height=100>
-      </div>
-      <div appDraggable [bounds]="bounds1" class="draggable">
-        <img src="assets/sloth.jpg" alt="Sloth" width=100 height=100>
-      </div>
+      <img appDraggable [bounds]="bounds1" [columns]="5" src="assets/redpanda.jpg" alt="Red Panda" width=100 height=100>
+      <img appDraggable [bounds]="bounds1" [columns]="5" src="assets/sloth.jpg" alt="Sloth" width=100 height=100>
     </div>
 
     <div class="container2" #bounds2>
       <h3 style="width:100%;">Scrollable container</h3>
-      <div appDraggable draggableFrom="handle1" [bounds]="bounds2" class="draggable" style="top: 40px; left: 60px;">
+      <div appDraggable draggableFrom="handle1" [bounds]="bounds2" [columns]="10" class="draggable" style="top: 40px; left: 60px;">
         <div class="draggable-header" id="handle1">Move it 1</div>
         <div class="draggable-container"></div>
       </div>
-      <div appDraggable draggableFrom="handle2" [bounds]="bounds2" class="draggable" style="top: 1000px; left: 100px;">
+      <div appDraggable draggableFrom="handle2" [bounds]="bounds2" [columns]="10" class="draggable" style="top: 1000px; left: 100px;">
         <div class="draggable-header" id="handle2">Move it 2</div>
         <div class="draggable-container"></div>
       </div>
