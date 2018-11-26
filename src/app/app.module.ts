@@ -4,12 +4,14 @@ import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
 import { CustomDragDropComponent } from './custom-drag-drop/custom-drag-drop.component';
 import { DraggableDirective } from './draggable.directive';
+import { GridDirective } from './grid.directive';
 
 @NgModule({
   declarations: [
     AppComponent,
     CustomDragDropComponent,
-    DraggableDirective
+    DraggableDirective,
+    GridDirective
   ],
   imports: [
     BrowserModule,

@@ -1,9 +1,8 @@
 <div class="custom-drag-container" #bounds>
 
-    <div class="container container1" #bounds1>
-      <h3 style="width:100%;">Simple container with bounds</h3>
-      <img appDraggable [bounds]="bounds1" src="assets/redpanda.jpg" alt="Red Panda" width=100 height=100>
-      <img appDraggable [bounds]="bounds1" src="assets/sloth.jpg" alt="Sloth" width=100 height=100>
+    <div class="container container1" #bounds1 appGrid [columns]="10" [rows]="4">
+      <img appDraggable [bounds]="bounds1" src="assets/redpanda.jpg" draggable="false" alt="Red Panda" width=100 height=100>
+      <img appDraggable [bounds]="bounds1" src="assets/sloth.jpg" draggable="false" alt="Sloth" width=100 height=100>
     </div>
 
     <div class="container container2" #bounds2>

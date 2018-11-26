@@ -50,7 +50,8 @@ export class DraggableDirective implements OnInit {
   draggableRect: any;
   draggableWidth: number;
   draggableHeight: number;
-  columnWidth: number;
+  // columnWidth: number;
+  // initialGridOffsetX: number;
 
   // Event observables
   mousedown$: Observable<MouseEvent>;
@@ -63,8 +64,11 @@ export class DraggableDirective implements OnInit {
   ) { }
 
   ngOnInit() {
-    // Find draggable element
+    // Find draggable element and disable html drag
     this.draggable = this.el.nativeElement;
+    this.draggable.draggable = false;
+    this.draggable.style.zIndex = '9999';
+    this.draggable.setAttribute('moveit', 'true');
 
     // Is draggable position absolute
     const draggablePositionStyle = window.getComputedStyle(this.draggable).getPropertyValue('position');
@@ -93,10 +97,11 @@ export class DraggableDirective implements OnInit {
     }
 
     // Get grid & replace elements
-    if (this.columns) {
-      this.columnWidth = Math.round(this.containerWidth / this.columns);
-      this.replaceElementOnGrid();
-    }
+    // if (this.columns) {
+    //   this.columnWidth = Math.round(this.containerWidth / this.columns);
+    //   this.initialGridOffsetX = this.getInitialGridOffset();
+    //   this.replaceElementOnGrid();
+    // }
 
     // Create event listeners
     this.mousedown$ = fromEvent(this.handle, 'mousedown') as Observable<MouseEvent>;
@@ -109,9 +114,6 @@ export class DraggableDirective implements OnInit {
       filter(mdEvent => mdEvent.button === 0),
       tap(() => document.body.classList.add('no-select')),
       mergeMap(mdEvent => {
-        const target = mdEvent.target as HTMLElement;
-        // Disable native behavior (ex: images can be dragged)
-        target.style.pointerEvents = 'none';
         // get pointer start position
         const startX = mdEvent.clientX - +this.draggable.getAttribute('data-x');
         const startY = mdEvent.pageY - +this.draggable.getAttribute('data-y');
@@ -132,8 +134,6 @@ export class DraggableDirective implements OnInit {
             tap(() => {
               document.body.classList.remove('no-select');
               this.clearSelection();
-              // Enable native behavior (ex: images can be dragged)
-              target.style.pointerEvents = 'unset';
             })
           ))
         );
@@ -154,7 +154,6 @@ export class DraggableDirective implements OnInit {
 
   getContainerRect(boundContainer: HTMLElement): PartialDomRect {
     if (boundContainer) {
-      // const containerRect = boundContainer.getBoundingClientRect();
       return {
         width: boundContainer.clientWidth,
         height: boundContainer.scrollHeight,
@@ -205,9 +204,9 @@ export class DraggableDirective implements OnInit {
     const bounds = this.getBounds();
 
     // Snap to grid
-    if (this.columns) {
-      newLeftPos = Math.round(leftPos / this.columnWidth) * this.columnWidth;
-    }
+    // if (this.columns) {
+    //   newLeftPos = Math.round(newLeftPos / this.columnWidth) * this.columnWidth;
+    // }
 
     if (newLeftPos < bounds.left) {
       newLeftPos = bounds.left;
@@ -235,17 +234,21 @@ export class DraggableDirective implements OnInit {
     };
   }
 
-  replaceElementOnGrid() {
-    const distanceToLeftBorder = this.draggable.offsetLeft - this.containerLeft;
+  // replaceElementOnGrid() {
+    // this.draggable.style.transform = 'translate(' + this.initialGridOffsetX + 'px, ' + 0 + 'px)';
+    // this.draggable.setAttribute('data-x', this.initialGridOffsetX.toString());
+    // this.draggable.setAttribute('data-y', offsetY.toString());
+  // }
 
-    if (distanceToLeftBorder % this.columnWidth !== 0) {
-      const nearestColumn = Math.round(distanceToLeftBorder / this.columnWidth);
-      const offsetX = nearestColumn * this.columnWidth - distanceToLeftBorder;
-      this.draggable.style.transform = 'translate(' + offsetX + 'px, ' + 0 + 'px)';
-      this.draggable.setAttribute('data-x', offsetX.toString());
-      // this.draggable.setAttribute('data-y', offsetY.toString());
-    }
-  }
+  // getInitialGridOffset(): number {
+  //   const distanceToLeftBorder = this.draggable.offsetLeft - this.containerLeft;
+  //   let offsetX = 0;
+  //   if (distanceToLeftBorder % this.columnWidth !== 0) {
+  //     const nearestColumn = Math.round(distanceToLeftBorder / this.columnWidth);
+  //     offsetX = nearestColumn * this.columnWidth - distanceToLeftBorder;
+  //   }
+  //   return offsetX;
+  // }
 
   clearSelection(): void {
     if (window.getSelection) {

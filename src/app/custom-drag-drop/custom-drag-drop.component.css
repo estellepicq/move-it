@@ -26,9 +26,10 @@
 .container1 {
   height: 300px;
   display: flex;
-  justify-content: space-around;
+  /* justify-content: space-around; */
   flex-wrap: wrap;
   border: 2px solid black;
+  width: 500px !important;
 }
 
 img {
