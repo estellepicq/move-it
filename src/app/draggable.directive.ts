@@ -68,7 +68,6 @@ export class DraggableDirective implements OnInit {
     this.draggable = this.el.nativeElement;
     this.draggable.draggable = false;
     this.draggable.style.zIndex = '9999';
-    this.draggable.setAttribute('moveit', 'true');
 
     // Is draggable position absolute
     const draggablePositionStyle = window.getComputedStyle(this.draggable).getPropertyValue('position');

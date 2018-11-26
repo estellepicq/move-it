@@ -35,7 +35,7 @@ export class GridDirective implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.draggables = this.container.querySelectorAll('[moveit]');
+    this.draggables = this.container.querySelectorAll('[appDraggable]');
     this.removeDraggablesFromContainer();
     this.generateGrid();
     this.appendDraggablesToGrid();
