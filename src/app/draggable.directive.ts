@@ -47,6 +47,7 @@ export class DraggableDirective implements OnInit {
   containerHeight: number;
   containerLeft: number;
   containerTop: number;
+  draggableRect: any;
   draggableWidth: number;
   draggableHeight: number;
   columnWidth: number;
@@ -81,9 +82,9 @@ export class DraggableDirective implements OnInit {
     this.containerLeft = containerRect.left;
     this.containerTop = containerRect.top;
     // Get draggable bounds
-    const draggableRect = this.draggable.getBoundingClientRect();
-    this.draggableWidth = draggableRect.width;
-    this.draggableHeight = draggableRect.height;
+    this.draggableRect = this.draggable.getBoundingClientRect();
+    this.draggableWidth = this.draggableRect.width;
+    this.draggableHeight = this.draggableRect.height;
 
     // Handle from a specific part of draggable element
     this.handle = this.draggable;
@@ -112,12 +113,6 @@ export class DraggableDirective implements OnInit {
         // Disable native behavior (ex: images can be dragged)
         target.style.pointerEvents = 'none';
         // get pointer start position
-        if (this.draggableAbsolutePosition) {
-          const offsetX = this.draggable.getBoundingClientRect().left - this.draggable.parentElement.getBoundingClientRect().left;
-          const offsetY = this.draggable.getBoundingClientRect().top - this.draggable.parentElement.getBoundingClientRect().top;
-          this.draggable.setAttribute('data-x', offsetX.toString());
-          this.draggable.setAttribute('data-y', offsetY.toString());
-        }
         const startX = mdEvent.clientX - +this.draggable.getAttribute('data-x');
         const startY = mdEvent.pageY - +this.draggable.getAttribute('data-y');
         // listen to mousemove
@@ -150,12 +145,7 @@ export class DraggableDirective implements OnInit {
     ).subscribe(pos => {
       // Get left and top position from the mouse
       const finalPos: DraggablePosition = this.checkBounds(pos.left, pos.top);
-      if (this.draggableAbsolutePosition) { // top and left properties can apply
-        this.draggable.style.left = finalPos.leftPos + 'px';
-        this.draggable.style.top = finalPos.topPos + 'px';
-      } else { // top and left cannot apply - use transform instead
-        this.draggable.style.transform = 'translate(' + finalPos.leftPos + 'px, ' + finalPos.topPos + 'px)';
-      }
+      this.draggable.style.transform = 'translate(' + finalPos.leftPos + 'px, ' + finalPos.topPos + 'px)';
       // In each case, set data-x and data-y
       this.draggable.setAttribute('data-x', finalPos.leftPos.toString());
       this.draggable.setAttribute('data-y', finalPos.topPos.toString());
@@ -164,17 +154,17 @@ export class DraggableDirective implements OnInit {
 
   getContainerRect(boundContainer: HTMLElement): PartialDomRect {
     if (boundContainer) {
-      const containerRect = boundContainer.getBoundingClientRect();
+      // const containerRect = boundContainer.getBoundingClientRect();
       return {
-        width: containerRect.width,
+        width: boundContainer.clientWidth,
         height: boundContainer.scrollHeight,
-        left: containerRect.left,
-        top: containerRect.top
+        left: this.draggableAbsolutePosition ? 0 : boundContainer.offsetLeft,
+        top: this.draggableAbsolutePosition ? 0 : boundContainer.offsetTop
       };
     } else {
       return {
-        width: Infinity,
-        height: Infinity,
+        width: document.body.scrollWidth,
+        height: document.body.scrollHeight,
         left: 0,
         top: 0
       };
@@ -186,10 +176,10 @@ export class DraggableDirective implements OnInit {
     let boundRight: number;
     let boundTop: number;
     let boundBottom: number;
-    if (this.draggableAbsolutePosition) {
-      boundLeft = 0;
-      boundRight = this.containerWidth - this.draggableWidth;
-      boundTop = 0;
+    if (this.draggableAbsolutePosition && !this.bounds) {
+      boundLeft = -this.draggableRect.left;
+      boundRight = this.containerWidth - this.draggableRect.left - this.draggableWidth;
+      boundTop = -this.draggableRect.top;
       boundBottom = this.containerHeight;
     } else {
       boundLeft = this.containerLeft - this.draggable.offsetLeft;
@@ -246,12 +236,7 @@ export class DraggableDirective implements OnInit {
   }
 
   replaceElementOnGrid() {
-    let distanceToLeftBorder: number;
-    if (this.draggableAbsolutePosition) {
-      distanceToLeftBorder = this.draggable.offsetLeft;
-    } else {
-      distanceToLeftBorder = this.draggable.offsetLeft - this.containerLeft;
-    }
+    const distanceToLeftBorder = this.draggable.offsetLeft - this.containerLeft;
 
     if (distanceToLeftBorder % this.columnWidth !== 0) {
       const nearestColumn = Math.round(distanceToLeftBorder / this.columnWidth);
