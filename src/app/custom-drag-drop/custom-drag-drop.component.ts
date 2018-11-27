@@ -13,5 +13,9 @@ export class CustomDragDropComponent implements OnInit {
   ngOnInit() {
   }
 
+  onMove(event) {
+    console.log(event);
+  }
+
 }
 

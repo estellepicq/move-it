@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Input, OnInit } from '@angular/core';
+import { Directive, ElementRef, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { Observable, fromEvent } from 'rxjs';
 import { map, takeUntil, mergeMap, filter, tap } from 'rxjs/operators';
 
@@ -15,19 +15,21 @@ interface PartialDomRect {
 }
 
 interface DraggablePosition {
-  leftPos: number;
-  topPos: number;
-  left: boolean;
-  right: boolean;
-  top: boolean;
-  bottom: boolean;
+  initX: number;
+  initY: number;
+  offsetX: number;
+  offsetY: number;
+  leftEdge: boolean;
+  rightEdge: boolean;
+  topEdge: boolean;
+  bottomEdge: boolean;
 }
 
 interface Bounds {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
+  boundLeft: number;
+  boundRight: number;
+  boundTop: number;
+  boundBottom: number;
 }
 
 @Directive({
@@ -35,9 +37,17 @@ interface Bounds {
 })
 export class DraggableDirective implements OnInit {
 
+  // Options
   @Input() draggableFrom: string;
   @Input() bounds: HTMLElement;
-  @Input() columns;
+  @Input() grid: number[];
+
+  // Emitted events
+  @Output() mDragStart: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
+  @Output() mDragMove: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
+  @Output() mDragStop: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
+
+  // Draggable element
   draggable: HTMLElement;
   handle: HTMLElement;
   draggableAbsolutePosition: boolean;
@@ -50,8 +60,6 @@ export class DraggableDirective implements OnInit {
   draggableRect: any;
   draggableWidth: number;
   draggableHeight: number;
-  // columnWidth: number;
-  // initialGridOffsetX: number;
 
   // Event observables
   mousedown$: Observable<MouseEvent>;
@@ -67,7 +75,6 @@ export class DraggableDirective implements OnInit {
     // Find draggable element and disable html drag
     this.draggable = this.el.nativeElement;
     this.draggable.draggable = false;
-    this.draggable.style.zIndex = '9999';
 
     // Is draggable position absolute
     const draggablePositionStyle = window.getComputedStyle(this.draggable).getPropertyValue('position');
@@ -89,18 +96,17 @@ export class DraggableDirective implements OnInit {
     this.draggableWidth = this.draggableRect.width;
     this.draggableHeight = this.draggableRect.height;
 
+    // Get initial X and Y positions
+    const initX = this.draggableAbsolutePosition ? this.draggableRect.left : this.draggable.offsetLeft - this.containerLeft;
+    const initY = this.draggableAbsolutePosition ? this.draggableRect.top : this.draggable.offsetTop - this.containerTop;
+    this.draggable.setAttribute('m-init-x', initX.toString());
+    this.draggable.setAttribute('m-init-y', initY.toString());
+
     // Handle from a specific part of draggable element
     this.handle = this.draggable;
     if (this.draggableFrom) {
       this.handle = this.draggable.querySelector('#' + this.draggableFrom);
     }
-
-    // Get grid & replace elements
-    // if (this.columns) {
-    //   this.columnWidth = Math.round(this.containerWidth / this.columns);
-    //   this.initialGridOffsetX = this.getInitialGridOffset();
-    //   this.replaceElementOnGrid();
-    // }
 
     // Create event listeners
     this.mousedown$ = fromEvent(this.handle, 'mousedown') as Observable<MouseEvent>;
@@ -114,8 +120,8 @@ export class DraggableDirective implements OnInit {
       tap(() => document.body.classList.add('no-select')),
       mergeMap(mdEvent => {
         // get pointer start position
-        const startX = mdEvent.clientX - +this.draggable.getAttribute('data-x');
-        const startY = mdEvent.pageY - +this.draggable.getAttribute('data-y');
+        const startX = mdEvent.clientX - +this.draggable.getAttribute('m-offset-x');
+        const startY = mdEvent.pageY - +this.draggable.getAttribute('m-offset-y');
         // listen to mousemove
         return this.mousemove$.pipe(
           map(mmEvent => {
@@ -142,22 +148,65 @@ export class DraggableDirective implements OnInit {
     // Listen to drag observable
     this.mousedrag$.pipe(
     ).subscribe(pos => {
+
       // Get left and top position from the mouse
-      const finalPos: DraggablePosition = this.checkBounds(pos.left, pos.top);
-      this.draggable.style.transform = 'translate(' + finalPos.leftPos + 'px, ' + finalPos.topPos + 'px)';
+      const finalPos: DraggablePosition = this.move(pos.left, pos.top);
+      this.draggable.style.transform = 'translate(' + finalPos.offsetX + 'px, ' + finalPos.offsetY + 'px)';
+
       // In each case, set data-x and data-y
-      this.draggable.setAttribute('data-x', finalPos.leftPos.toString());
-      this.draggable.setAttribute('data-y', finalPos.topPos.toString());
+      this.draggable.setAttribute('m-offset-x', finalPos.offsetX.toString());
+      this.draggable.setAttribute('m-offset-y', finalPos.offsetY.toString());
+
+      // Emit position
+      this.mDragMove.emit(finalPos);
     });
+  }
+
+  move(leftPos: number, topPos: number): DraggablePosition {
+    let newLeftPos = leftPos;
+    let newTopPos = topPos;
+    let leftEdge = false;
+    let rightEdge = false;
+    let topEdge = false;
+    let bottomEdge = false;
+    const bounds = this.getBounds();
+
+    if (newLeftPos < bounds.boundLeft) {
+      newLeftPos = bounds.boundLeft;
+      leftEdge = true;
+    }
+    if (newLeftPos > bounds.boundRight) {
+      newLeftPos = bounds.boundRight;
+      rightEdge = true;
+    }
+    if (topPos < bounds.boundTop) {
+      newTopPos = bounds.boundTop;
+      topEdge = true;
+    }
+    if (topPos > bounds.boundBottom) {
+      newTopPos = bounds.boundBottom;
+      bottomEdge = true;
+    }
+    return {
+      initX: +this.draggable.getAttribute('m-init-x'),
+      initY: +this.draggable.getAttribute('m-init-y'),
+      offsetX: newLeftPos,
+      offsetY: newTopPos,
+      leftEdge: leftEdge,
+      rightEdge: rightEdge,
+      topEdge: topEdge,
+      bottomEdge: bottomEdge
+    };
   }
 
   getContainerRect(boundContainer: HTMLElement): PartialDomRect {
     if (boundContainer) {
+      const borderWidth = parseInt(window.getComputedStyle(boundContainer).borderWidth, 10);
       return {
         width: boundContainer.clientWidth,
         height: boundContainer.scrollHeight,
-        left: this.draggableAbsolutePosition ? 0 : boundContainer.offsetLeft,
-        top: this.draggableAbsolutePosition ? 0 : boundContainer.offsetTop
+        left: this.draggableAbsolutePosition ? borderWidth : boundContainer.offsetLeft + borderWidth,
+        top: this.draggableAbsolutePosition ? borderWidth : boundContainer.offsetTop + borderWidth
       };
     } else {
       return {
@@ -186,68 +235,12 @@ export class DraggableDirective implements OnInit {
       boundBottom = this.containerHeight - this.draggableHeight - this.draggable.offsetTop + this.containerTop;
     }
     return {
-      left: boundLeft,
-      right: boundRight,
-      top: boundTop,
-      bottom: boundBottom
+      boundLeft: boundLeft,
+      boundRight: boundRight,
+      boundTop: boundTop,
+      boundBottom: boundBottom
     };
   }
-
-  checkBounds(leftPos: number, topPos: number): DraggablePosition {
-    let newLeftPos = leftPos;
-    let newTopPos = topPos;
-    let left = false;
-    let right = false;
-    let top = false;
-    let bottom = false;
-    const bounds = this.getBounds();
-
-    // Snap to grid
-    // if (this.columns) {
-    //   newLeftPos = Math.round(newLeftPos / this.columnWidth) * this.columnWidth;
-    // }
-
-    if (newLeftPos < bounds.left) {
-      newLeftPos = bounds.left;
-      left = true;
-    }
-    if (newLeftPos > bounds.right) {
-      newLeftPos = bounds.right;
-      right = true;
-    }
-    if (topPos < bounds.top) {
-      newTopPos = bounds.top;
-      top = true;
-    }
-    if (topPos > bounds.bottom) {
-      newTopPos = bounds.bottom;
-      bottom = true;
-    }
-    return {
-      leftPos: newLeftPos,
-      topPos: newTopPos,
-      left: left,
-      right: right,
-      top: top,
-      bottom: bottom
-    };
-  }
-
-  // replaceElementOnGrid() {
-    // this.draggable.style.transform = 'translate(' + this.initialGridOffsetX + 'px, ' + 0 + 'px)';
-    // this.draggable.setAttribute('data-x', this.initialGridOffsetX.toString());
-    // this.draggable.setAttribute('data-y', offsetY.toString());
-  // }
-
-  // getInitialGridOffset(): number {
-  //   const distanceToLeftBorder = this.draggable.offsetLeft - this.containerLeft;
-  //   let offsetX = 0;
-  //   if (distanceToLeftBorder % this.columnWidth !== 0) {
-  //     const nearestColumn = Math.round(distanceToLeftBorder / this.columnWidth);
-  //     offsetX = nearestColumn * this.columnWidth - distanceToLeftBorder;
-  //   }
-  //   return offsetX;
-  // }
 
   clearSelection(): void {
     if (window.getSelection) {
