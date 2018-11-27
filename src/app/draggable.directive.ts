@@ -1,5 +1,5 @@
-import { Directive, ElementRef, Input, OnInit, Output, EventEmitter } from '@angular/core';
-import { Observable, fromEvent } from 'rxjs';
+import { Directive, ElementRef, Input, OnInit, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Observable, fromEvent, Subscription } from 'rxjs';
 import { map, takeUntil, mergeMap, filter, tap } from 'rxjs/operators';
 
 interface MousePosition {
@@ -7,18 +7,14 @@ interface MousePosition {
   top: number;
 }
 
-interface PartialDomRect {
-  width: number;
-  height: number;
-  left: number;
-  top: number;
+interface DraggablePosition {
+  initLeft: number;
+  initTop: number;
+  offsetLeft: number;
+  offsetTop: number;
 }
 
-interface DraggablePosition {
-  initX: number;
-  initY: number;
-  offsetX: number;
-  offsetY: number;
+interface DraggableMovingPosition extends DraggablePosition {
   leftEdge: boolean;
   rightEdge: boolean;
   topEdge: boolean;
@@ -35,7 +31,7 @@ interface Bounds {
 @Directive({
   selector: '[appDraggable]'
 })
-export class DraggableDirective implements OnInit {
+export class DraggableDirective implements OnInit, OnDestroy {
 
   // Options
   @Input() draggableFrom: string;
@@ -44,7 +40,7 @@ export class DraggableDirective implements OnInit {
 
   // Emitted events
   @Output() mDragStart: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
-  @Output() mDragMove: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
+  @Output() mDragMove: EventEmitter<DraggableMovingPosition> = new EventEmitter<DraggableMovingPosition>();
   @Output() mDragStop: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
 
   // Draggable element
@@ -60,16 +56,31 @@ export class DraggableDirective implements OnInit {
   draggableRect: any;
   draggableWidth: number;
   draggableHeight: number;
+  draggableInitLeft: number;
+  draggableInitTop: number;
 
   // Event observables
   mousedown$: Observable<MouseEvent>;
   mousemove$: Observable<MouseEvent>;
   mouseup$: Observable<MouseEvent>;
   mousedrag$: Observable<MousePosition>;
+  windowResize$: Observable<Event> = fromEvent(window, 'resize');
+  mousedragSub: Subscription;
 
   constructor(
     private el: ElementRef,
-  ) { }
+  ) {
+    this.windowResize$.subscribe((wrEvent) => {
+      // Get container dimensions
+      this.getContainerDimensions();
+      // Get draggable bounds
+      this.getDraggableDimensions();
+      // Move element
+      const offsetLeft = this.getDraggableAttribute('m-offset-x');
+      const offsetTop = this.getDraggableAttribute('m-offset-y');
+      this.move(offsetLeft, offsetTop);
+    });
+  }
 
   ngOnInit() {
     // Find draggable element and disable html drag
@@ -85,22 +96,11 @@ export class DraggableDirective implements OnInit {
       this.draggableAbsolutePosition = true;
     }
 
-    // Get container bounds
-    const containerRect: PartialDomRect = this.getContainerRect(this.bounds);
-    this.containerWidth = containerRect.width;
-    this.containerHeight = containerRect.height;
-    this.containerLeft = containerRect.left;
-    this.containerTop = containerRect.top;
-    // Get draggable bounds
-    this.draggableRect = this.draggable.getBoundingClientRect();
-    this.draggableWidth = this.draggableRect.width;
-    this.draggableHeight = this.draggableRect.height;
+    // Get container dimensions
+    this.getContainerDimensions();
 
-    // Get initial X and Y positions
-    const initX = this.draggableAbsolutePosition ? this.draggableRect.left : this.draggable.offsetLeft - this.containerLeft;
-    const initY = this.draggableAbsolutePosition ? this.draggableRect.top : this.draggable.offsetTop - this.containerTop;
-    this.draggable.setAttribute('m-init-x', initX.toString());
-    this.draggable.setAttribute('m-init-y', initY.toString());
+    // Get draggable bounds
+    this.getDraggableDimensions();
 
     // Handle from a specific part of draggable element
     this.handle = this.draggable;
@@ -112,16 +112,37 @@ export class DraggableDirective implements OnInit {
     this.mousedown$ = fromEvent(this.handle, 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
+    // this.windowResize$ = fromEvent(window, 'resize');
 
-    // Create drag observable
-    this.mousedrag$ = this.mousedown$.pipe(
+    // Create mousedrag observable
+    this.mousedrag$ = this.createMousedragObservable();
+
+    // Listen to mousedrag observable
+    this.mousedragSub = this.listenMousedragObservable();
+  }
+
+  ngOnDestroy() {
+    this.mousedragSub.unsubscribe();
+  }
+
+  createMousedragObservable(): Observable<MousePosition> {
+    return this.mousedown$.pipe(
       // Only from left button
       filter(mdEvent => mdEvent.button === 0),
-      tap(() => document.body.classList.add('no-select')),
+      tap(() => {
+        document.body.classList.add('no-select');
+        const startPos: DraggablePosition = {
+          initLeft: this.draggableInitLeft,
+          initTop: this.draggableInitTop,
+          offsetLeft: 0,
+          offsetTop: 0
+        };
+        this.mDragStart.emit(startPos);
+      }),
       mergeMap(mdEvent => {
         // get pointer start position
-        const startX = mdEvent.clientX - +this.draggable.getAttribute('m-offset-x');
-        const startY = mdEvent.pageY - +this.draggable.getAttribute('m-offset-y');
+        const startX = mdEvent.clientX - this.getDraggableAttribute('m-offset-x');
+        const startY = mdEvent.pageY - this.getDraggableAttribute('m-offset-y');
         // listen to mousemove
         return this.mousemove$.pipe(
           map(mmEvent => {
@@ -134,35 +155,32 @@ export class DraggableDirective implements OnInit {
               top: mmEvent.pageY - startY + scrollY,
             };
           }),
-          // stop listening to mousemove on mouseup
+          // stop listening on mouseup
           takeUntil(this.mouseup$.pipe(
             tap(() => {
               document.body.classList.remove('no-select');
               this.clearSelection();
+              const finalPos: DraggablePosition = {
+                initLeft: this.draggableInitLeft,
+                initTop: this.draggableInitTop,
+                offsetLeft: this.getDraggableAttribute('m-offset-x'),
+                offsetTop: this.getDraggableAttribute('m-offset-y')
+              };
+              this.mDragStop.emit(finalPos);
             })
           ))
         );
       }),
     );
+  }
 
-    // Listen to drag observable
-    this.mousedrag$.pipe(
-    ).subscribe(pos => {
-
-      // Get left and top position from the mouse
-      const finalPos: DraggablePosition = this.move(pos.left, pos.top);
-      this.draggable.style.transform = 'translate(' + finalPos.offsetX + 'px, ' + finalPos.offsetY + 'px)';
-
-      // In each case, set data-x and data-y
-      this.draggable.setAttribute('m-offset-x', finalPos.offsetX.toString());
-      this.draggable.setAttribute('m-offset-y', finalPos.offsetY.toString());
-
-      // Emit position
-      this.mDragMove.emit(finalPos);
+  listenMousedragObservable(): Subscription {
+    return this.mousedrag$.subscribe(mousePos => {
+      this.move(mousePos.left, mousePos.top);
     });
   }
 
-  move(leftPos: number, topPos: number): DraggablePosition {
+  move(leftPos: number, topPos: number): void {
     let newLeftPos = leftPos;
     let newTopPos = topPos;
     let leftEdge = false;
@@ -179,43 +197,60 @@ export class DraggableDirective implements OnInit {
       newLeftPos = bounds.boundRight;
       rightEdge = true;
     }
-    if (topPos < bounds.boundTop) {
+    if (newTopPos < bounds.boundTop) {
       newTopPos = bounds.boundTop;
       topEdge = true;
     }
-    if (topPos > bounds.boundBottom) {
+    if (newTopPos > bounds.boundBottom) {
       newTopPos = bounds.boundBottom;
       bottomEdge = true;
     }
-    return {
-      initX: +this.draggable.getAttribute('m-init-x'),
-      initY: +this.draggable.getAttribute('m-init-y'),
-      offsetX: newLeftPos,
-      offsetY: newTopPos,
+
+    const movingPos: DraggableMovingPosition = {
+      initLeft: this.draggableInitLeft,
+      initTop: this.draggableInitTop,
+      offsetLeft: newLeftPos,
+      offsetTop: newTopPos,
       leftEdge: leftEdge,
       rightEdge: rightEdge,
       topEdge: topEdge,
       bottomEdge: bottomEdge
     };
+
+    // Move draggable element
+    this.draggable.style.transform = 'translate(' + movingPos.offsetLeft + 'px, ' + movingPos.offsetTop + 'px)';
+
+    // Update m-offset-x and m-offset-y
+    this.setDraggableAttribute('m-offset-x', movingPos.offsetLeft);
+    this.setDraggableAttribute('m-offset-y', movingPos.offsetTop);
+
+    // Emit position
+    this.mDragMove.emit(movingPos);
   }
 
-  getContainerRect(boundContainer: HTMLElement): PartialDomRect {
-    if (boundContainer) {
-      const borderWidth = parseInt(window.getComputedStyle(boundContainer).borderWidth, 10);
-      return {
-        width: boundContainer.clientWidth,
-        height: boundContainer.scrollHeight,
-        left: this.draggableAbsolutePosition ? borderWidth : boundContainer.offsetLeft + borderWidth,
-        top: this.draggableAbsolutePosition ? borderWidth : boundContainer.offsetTop + borderWidth
-      };
+  getContainerDimensions(): void {
+    if (this.bounds) {
+      const borderWidth = parseInt(window.getComputedStyle(this.bounds).borderWidth, 10);
+      this.containerWidth = this.bounds.clientWidth;
+      this.containerHeight = this.bounds.scrollHeight;
+      this.containerLeft = this.draggableAbsolutePosition ? borderWidth : this.bounds.offsetLeft + borderWidth;
+      this.containerTop = this.draggableAbsolutePosition ? borderWidth : this.bounds.offsetTop + borderWidth;
     } else {
-      return {
-        width: document.body.scrollWidth,
-        height: document.body.scrollHeight,
-        left: 0,
-        top: 0
-      };
+      this.containerWidth = document.body.scrollWidth;
+      this.containerHeight = document.body.scrollHeight;
+      this.containerLeft = 0;
+      this.containerTop = 0;
     }
+  }
+
+  getDraggableDimensions() {
+    this.draggableRect = this.draggable.getBoundingClientRect();
+    this.draggableWidth = this.draggableRect.width;
+    this.draggableHeight = this.draggableRect.height;
+    this.draggableInitLeft = this.draggableAbsolutePosition ? this.draggableRect.left : this.draggable.offsetLeft - this.containerLeft;
+    this.draggableInitTop = this.draggableAbsolutePosition ? this.draggableRect.top : this.draggable.offsetTop - this.containerTop;
+    this.setDraggableAttribute('m-init-x', this.draggableInitLeft);
+    this.setDraggableAttribute('m-init-y', this.draggableInitTop);
   }
 
   getBounds(): Bounds {
@@ -246,6 +281,14 @@ export class DraggableDirective implements OnInit {
     if (window.getSelection) {
       window.getSelection().removeAllRanges();
     }
+  }
+
+  setDraggableAttribute(attr: string, value: number): void {
+    this.draggable.setAttribute(attr, value.toString());
+  }
+
+  getDraggableAttribute(attr: string): number {
+    return +this.draggable.getAttribute(attr);
   }
 
 }
