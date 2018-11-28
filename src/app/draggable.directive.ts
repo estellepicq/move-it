@@ -1,6 +1,6 @@
 import { Directive, ElementRef, Input, OnInit, Output, EventEmitter, OnDestroy } from '@angular/core';
-import { Observable, fromEvent, Subscription } from 'rxjs';
-import { map, takeUntil, mergeMap, filter, tap } from 'rxjs/operators';
+import { Observable, fromEvent, Subscription, merge } from 'rxjs';
+import { map, takeUntil, mergeMap, filter, tap, take } from 'rxjs/operators';
 
 interface MousePosition {
   left: number;
@@ -58,27 +58,34 @@ export class DraggableDirective implements OnInit, OnDestroy {
   draggableHeight: number;
   draggableInitLeft: number;
   draggableInitTop: number;
+  draggableLeftRatio: number;
+  draggableTopRatio: number;
 
   // Event observables
   mousedown$: Observable<MouseEvent>;
   mousemove$: Observable<MouseEvent>;
   mouseup$: Observable<MouseEvent>;
-  mousedrag$: Observable<MousePosition>;
+  touchstart$: Observable<TouchEvent>;
+  touchmove$: Observable<TouchEvent>;
+  touchend$: Observable<TouchEvent>;
+  touchcancel$: Observable<TouchEvent>;
+  start$: Observable<MouseEvent | TouchEvent>;
+  move$: Observable<MouseEvent | TouchEvent>;
+  stop$: Observable<MouseEvent | TouchEvent>;
+  drag$: Observable<MousePosition>;
+  dragSub: Subscription;
+
+  // Window size
   windowResize$: Observable<Event> = fromEvent(window, 'resize');
-  mousedragSub: Subscription;
 
   constructor(
     private el: ElementRef,
   ) {
-    this.windowResize$.subscribe((wrEvent) => {
+    this.windowResize$.subscribe(() => {
       // Get container dimensions
       this.getContainerDimensions();
-      // Get draggable bounds
-      this.getDraggableDimensions();
-      // Move element
-      const offsetLeft = this.getDraggableAttribute('m-offset-x');
-      const offsetTop = this.getDraggableAttribute('m-offset-y');
-      this.move(offsetLeft, offsetTop);
+      // Move element proportionnally to its container
+      this.move(this.containerWidth * this.draggableLeftRatio, this.containerHeight * this.draggableTopRatio);
     });
   }
 
@@ -101,6 +108,8 @@ export class DraggableDirective implements OnInit, OnDestroy {
 
     // Get draggable bounds
     this.getDraggableDimensions();
+    this.draggableLeftRatio =  0;
+    this.draggableTopRatio =  0;
 
     // Handle from a specific part of draggable element
     this.handle = this.draggable;
@@ -112,24 +121,30 @@ export class DraggableDirective implements OnInit, OnDestroy {
     this.mousedown$ = fromEvent(this.handle, 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
-    // this.windowResize$ = fromEvent(window, 'resize');
+    this.touchstart$ = fromEvent(this.handle, 'touchstart') as Observable<TouchEvent>;
+    this.touchmove$ = fromEvent(document, 'touchmove') as Observable<TouchEvent>;
+    this.touchend$ = fromEvent(document, 'touchend') as Observable<TouchEvent>;
+    this.touchcancel$ = fromEvent(document, 'touchcancel') as Observable<TouchEvent>;
+    this.start$ = merge(this.mousedown$, this.touchstart$);
+    this.move$ = merge(this.mousemove$, this.touchmove$);
+    this.stop$ = merge(this.mouseup$, this.touchend$, this.touchcancel$);
 
     // Create mousedrag observable
-    this.mousedrag$ = this.createMousedragObservable();
+    this.drag$ = this.createDragObservable();
 
     // Listen to mousedrag observable
-    this.mousedragSub = this.listenMousedragObservable();
+    this.dragSub = this.listenDragObservable();
   }
 
   ngOnDestroy() {
-    this.mousedragSub.unsubscribe();
+    this.dragSub.unsubscribe();
   }
 
-  createMousedragObservable(): Observable<MousePosition> {
-    return this.mousedown$.pipe(
+  createDragObservable(): Observable<MousePosition> {
+    return this.start$.pipe(
       // Only from left button
-      filter(mdEvent => mdEvent.button === 0),
-      tap(() => {
+      filter(mdEvent => mdEvent instanceof MouseEvent && mdEvent.button === 0 || mdEvent instanceof TouchEvent),
+      tap((mdEvent) => {
         document.body.classList.add('no-select');
         const startPos: DraggablePosition = {
           initLeft: this.draggableInitLeft,
@@ -137,26 +152,33 @@ export class DraggableDirective implements OnInit, OnDestroy {
           offsetLeft: 0,
           offsetTop: 0
         };
+        if (mdEvent instanceof TouchEvent) {
+          mdEvent.preventDefault();
+        }
         this.mDragStart.emit(startPos);
       }),
       mergeMap(mdEvent => {
+        const mdClientX = mdEvent instanceof MouseEvent ? mdEvent.clientX : mdEvent.touches[0].clientX;
+        const mdPageY = mdEvent instanceof MouseEvent ? mdEvent.pageY : mdEvent.touches[0].pageY;
         // get pointer start position
-        const startX = mdEvent.clientX - this.getDraggableAttribute('m-offset-x');
-        const startY = mdEvent.pageY - this.getDraggableAttribute('m-offset-y');
-        // listen to mousemove
-        return this.mousemove$.pipe(
+        const startX = mdClientX - this.getDraggableAttribute('m-offset-x');
+        const startY = mdPageY - this.getDraggableAttribute('m-offset-y');
+        // listen to move$
+        return this.move$.pipe(
           map(mmEvent => {
             let scrollY = 0;
             if (this.bounds) {
               scrollY = this.bounds.scrollTop;
             }
+            const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
+            const mmPageY = mmEvent instanceof MouseEvent ? mmEvent.pageY : mmEvent.touches[0].pageY;
             return {
-              left: mmEvent.clientX - startX,
-              top: mmEvent.pageY - startY + scrollY,
+              left: mmClientX - startX,
+              top: mmPageY - startY + scrollY,
             };
           }),
-          // stop listening on mouseup
-          takeUntil(this.mouseup$.pipe(
+          // stop listening on stop$
+          takeUntil(this.stop$.pipe(
             tap(() => {
               document.body.classList.remove('no-select');
               this.clearSelection();
@@ -166,6 +188,10 @@ export class DraggableDirective implements OnInit, OnDestroy {
                 offsetLeft: this.getDraggableAttribute('m-offset-x'),
                 offsetTop: this.getDraggableAttribute('m-offset-y')
               };
+              // this is for window resize
+              this.draggableLeftRatio =  finalPos.offsetLeft / this.containerWidth;
+              this.draggableTopRatio =  finalPos.offsetTop / this.containerHeight;
+              // Emit position
               this.mDragStop.emit(finalPos);
             })
           ))
@@ -174,8 +200,8 @@ export class DraggableDirective implements OnInit, OnDestroy {
     );
   }
 
-  listenMousedragObservable(): Subscription {
-    return this.mousedrag$.subscribe(mousePos => {
+  listenDragObservable(): Subscription {
+    return this.drag$.subscribe(mousePos => {
       this.move(mousePos.left, mousePos.top);
     });
   }
@@ -259,10 +285,14 @@ export class DraggableDirective implements OnInit, OnDestroy {
     let boundTop: number;
     let boundBottom: number;
     if (this.draggableAbsolutePosition && !this.bounds) {
-      boundLeft = -this.draggableRect.left;
-      boundRight = this.containerWidth - this.draggableRect.left - this.draggableWidth;
-      boundTop = -this.draggableRect.top;
-      boundBottom = this.containerHeight;
+      // boundLeft = -this.draggableRect.left;
+      // boundRight = this.containerWidth - this.draggableRect.left - this.draggableWidth;
+      // boundTop = -this.draggableRect.top;
+      // boundBottom = this.containerHeight;
+      boundLeft = -Infinity;
+      boundRight = Infinity;
+      boundTop = -Infinity;
+      boundBottom = Infinity;
     } else {
       boundLeft = this.containerLeft - this.draggable.offsetLeft;
       boundRight = this.containerWidth - this.draggableWidth - this.draggable.offsetLeft + this.containerLeft;

@@ -1,5 +1,7 @@
 <div class="custom-drag-container" #bounds>
 
+    <div appDraggable class="draggable simple-example">I'm fruit</div>
+
     <div class="container container1" #bounds1>
       <img appDraggable [bounds]="bounds1" src="assets/redpanda.jpg" [grid]="[50]" draggable="false" alt="Red Panda" width=100 height=100>
       <img appDraggable [bounds]="bounds1" src="assets/sloth.jpg" [grid]="[50]" draggable="false" alt="Sloth" width=100 height=100>
@@ -24,14 +26,14 @@
       </div>
     </div>
 
-    <div class="container container3">
+    <!-- <div class="container container3">
       <h3 style="width:100%;">Container with absolute positionning and no bounds</h3>
       <div appDraggable class="draggable">Move me</div>
-    </div>
+    </div> -->
 
     <div class="container container4" #bounds4>
       <h3 style="width:100%;">Container with absolute positionning and bounds</h3>
-      <div appDraggable [bounds]="bounds4" class="draggable">Move me too!</div>
+      <div appDraggable [bounds]="bounds4" class="draggable">Move me!</div>
     </div>
 
 </div>

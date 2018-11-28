@@ -100,3 +100,10 @@ img {
   top: 60px;
   left: 30px;
 }
+
+.simple-example {
+  background: #3a6bad;
+  color: white;
+  text-align: center;
+  font-weight: bold;
+}
