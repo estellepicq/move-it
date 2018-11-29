@@ -23,3 +23,8 @@ export interface Bounds {
   boundTop: number;
   boundBottom: number;
 }
+
+export interface Grid {
+  columnWidth: number;
+  rowHeight: number;
+}
