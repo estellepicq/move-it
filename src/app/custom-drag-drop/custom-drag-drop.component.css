@@ -16,10 +16,8 @@
 .draggable {
   display: flex;
   flex-direction: column;
-  /* box-sizing: border-box; */
   width: 100px;
   height: 100px;
-  border-radius: 5px;
 }
 
 /* CONTAINER 1 */
@@ -89,6 +87,7 @@ img {
 .container4 {
   border: 2px solid black;
   position: relative;
+  height: 300px;
 }
 
 .container4 .draggable {

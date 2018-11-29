@@ -3,7 +3,6 @@ body {
   font-family: Helvetica;
   margin: 0;
   background: #393f4d;
-  /* overflow: hidden; */
   height: 100%;
 }
 
@@ -13,4 +12,10 @@ body {
 
 .no-select ::-moz-selection {
   background: transparent;
+}
+
+.moving {
+  box-sizing: border-box;
+  border: 1px solid white !important;
+  z-index: 9999;
 }
