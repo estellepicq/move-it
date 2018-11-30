@@ -4,6 +4,7 @@ body {
   margin: 0;
   background: #393f4d;
   height: 100%;
+  overflow: hidden; /* for dashboard mode */
 }
 
 .no-select ::selection {

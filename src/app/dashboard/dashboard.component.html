@@ -1,0 +1,9 @@
+<div class="dashboard-container">
+
+  <app-dashboard-page *ngFor="let page of pages$ | async;"
+    [height]="pageHeight"
+    [dashboardWidth]="dashboardDimensions.width"
+    [columns]="10">
+  </app-dashboard-page>
+
+</div>

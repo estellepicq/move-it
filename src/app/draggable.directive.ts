@@ -167,6 +167,7 @@ export class DraggableDirective implements OnInit, OnDestroy {
   onMouseDown(mdEvent: MouseEvent | TouchEvent): MousePosition {
     // Get container bounds
     this.containerBounds = this.getBounds();
+    console.log(this.containerBounds);
     // Disable native behavior of some elements inside the draggable element (ex: images)
     this.draggable.style.pointerEvents = 'none';
     // Add style to moving element
