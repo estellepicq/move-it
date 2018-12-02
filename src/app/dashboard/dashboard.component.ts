@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, HostListener, Input } from '@angular/core';
+import { Component, OnInit, ElementRef, HostListener, Input, AfterViewInit } from '@angular/core';
 import { Subscription, Observable, of } from 'rxjs';
 
 @Component({
@@ -27,7 +27,7 @@ export class DashboardComponent implements OnInit {
   handleResizeEvent() {
     this.dashboardDimensions = this.el.nativeElement.getBoundingClientRect();
     this.pageHeight = this.dashboardDimensions.width / this.dashboardModeRatio;
-  }
+    }
 
   ngOnInit() {
 

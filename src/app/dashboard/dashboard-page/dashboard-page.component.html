@@ -2,15 +2,15 @@
 
   <div class="inner-page" [style.height.px]="height - margin">
 
-
-    <div appDraggable class="draggable" [bounds]="gridBounds">
-      Hello
-    </div>
-
     <div class="grid-column" *ngFor="let column of gridColumns; let i = index;" [ngStyle]="getColumnStyle(i)"></div>
     <div class="grid-row" *ngFor="let row of gridRows; let i = index;" [ngStyle]="getRowStyle(i)"></div>
 
-
+    <ng-container *ngFor="let item of items">
+      <div appGridDraggable class="draggable" [bounds]="gridBounds" [item]="item">
+        Hello
+      </div>
+    </ng-container>
+  
   </div>
 
   <!-- <div *ngFor="let item of dashboard$ | async; trackBy: trackDashboardItem"

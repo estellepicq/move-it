@@ -17,6 +17,6 @@ body {
 
 .moving {
   box-sizing: border-box;
-  border: 1px solid white !important;
+  border: 1px solid #eee !important;
   z-index: 9999;
 }

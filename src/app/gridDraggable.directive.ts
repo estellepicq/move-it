@@ -1,18 +1,25 @@
 import { Directive, ElementRef, Input, OnInit, Output, EventEmitter, OnDestroy, AfterViewInit } from '@angular/core';
 import { Observable, fromEvent, Subscription, merge } from 'rxjs';
 import { map, takeUntil, mergeMap, filter, tap } from 'rxjs/operators';
-import { DraggablePosition, DraggableMovingPosition, MousePosition, Bounds, Grid } from './models/draggable-types';
+import { DraggablePosition,
+  DraggableMovingPosition,
+  MousePosition,
+  Bounds,
+  Grid,
+  DimensionsPx,
+  DimensionsOnGrid } from './models/draggable-types';
 
 @Directive({
-  selector: '[appDraggable]'
+  selector: '[appGridDraggable]'
 })
-export class DraggableDirective implements AfterViewInit, OnDestroy {
+export class GridDraggableDirective implements AfterViewInit, OnDestroy {
 
   // Options
   @Input() draggableFrom: string;
   @Input() bounds: HTMLElement = document.body;
   @Input() columns: number;
   @Input() rows: number;
+  @Input() item: DimensionsOnGrid;
 
   // Emitted events
   @Output() mDragStart: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
@@ -22,18 +29,11 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
   // Draggable element
   draggable: HTMLElement;
   handle: HTMLElement;
-  draggableAbsolutePosition = false;
 
   // Draggable and container positions
-  containerWidth: number;
-  containerHeight: number;
-  containerLeft: number;
-  containerTop: number;
+  containerDimensions: DimensionsPx;
   containerBounds: Bounds;
-  draggableWidth: number;
-  draggableHeight: number;
-  draggableInitLeft: number;
-  draggableInitTop: number;
+  draggableDimensions: DimensionsPx;
   draggableLeftRatio: number;
   draggableTopRatio: number;
   grid: Grid;
@@ -65,23 +65,15 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     this.draggable = this.el.nativeElement;
     this.draggable.draggable = false;
 
-    // Is draggable position absolute ?
-    const draggablePositionStyle = window.getComputedStyle(this.draggable).getPropertyValue('position');
-    if (draggablePositionStyle === 'absolute'
-      || draggablePositionStyle === 'fixed'
-      || draggablePositionStyle === 'sticky'
-      || draggablePositionStyle === 'relative') {
-      this.draggableAbsolutePosition = true;
-    }
-
-    // Get container dimensions
-    this.getContainerDimensions();
+    // Get dimensions
+    setTimeout(() => {
+      this.getContainerDimensions();
+      this.initDraggableDimensions();
+      this.containerBounds = this.getBounds();
+    }, 100);
 
     // Get grid
     this.grid = this.getGrid();
-
-    // Get draggable bounds
-    this.initDraggableDimensions();
 
     // Handle from a specific part of draggable element
     this.handle = this.draggable;
@@ -118,7 +110,8 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
       // Get grid
       this.grid = this.getGrid();
       // Move element proportionnally to its container
-      this.move(this.containerWidth * this.draggableLeftRatio, this.containerHeight * this.draggableTopRatio);
+      this.move(this.containerDimensions.width * this.draggableLeftRatio,
+        this.containerDimensions.height * this.draggableTopRatio);
     });
   }
 
@@ -152,22 +145,7 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     );
   }
 
-  initDraggableDimensions() {
-    const draggableRect = this.draggable.getBoundingClientRect();
-    this.draggableWidth = draggableRect.width;
-    this.draggableHeight = draggableRect.height;
-    this.draggableInitLeft = this.draggableAbsolutePosition ? draggableRect.left : this.draggable.offsetLeft - this.containerLeft;
-    this.draggableInitTop = this.draggableAbsolutePosition ? draggableRect.top : this.draggable.offsetTop - this.containerTop;
-    this.setDraggableAttribute('m-init-x', this.draggableInitLeft);
-    this.setDraggableAttribute('m-init-y', this.draggableInitTop);
-    this.draggableLeftRatio = 0;
-    this.draggableTopRatio = 0;
-  }
-
   onMouseDown(mdEvent: MouseEvent | TouchEvent): MousePosition {
-    // Get container bounds
-    this.containerBounds = this.getBounds();
-    console.log(this.containerBounds);
     // Disable native behavior of some elements inside the draggable element (ex: images)
     this.draggable.style.pointerEvents = 'none';
     // Add style to moving element
@@ -180,17 +158,17 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     }
     // Emit draggable start position
     const startPos: DraggablePosition = {
-      initLeft: this.draggableInitLeft,
-      initTop: this.draggableInitTop,
+      initLeft: this.draggableDimensions.left,
+      initTop: this.draggableDimensions.top,
       offsetLeft: this.getDraggableAttribute('m-offset-x'),
       offsetTop: this.getDraggableAttribute('m-offset-y')
     };
     this.mDragStart.emit(startPos);
     // Get pointer start position and return it
     const mdClientX = mdEvent instanceof MouseEvent ? mdEvent.clientX : mdEvent.touches[0].clientX;
-    const mdPageY = mdEvent instanceof MouseEvent ? mdEvent.pageY : mdEvent.touches[0].pageY;
+    const mdClientY = mdEvent instanceof MouseEvent ? mdEvent.clientY : mdEvent.touches[0].clientY;
     const startX = mdClientX - startPos.offsetLeft;
-    const startY = mdPageY - startPos.offsetTop;
+    const startY = mdClientY - startPos.offsetTop + this.bounds.scrollTop;
     return {
       left: startX,
       top: startY
@@ -198,18 +176,13 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
   }
 
   onMouseMove(mmEvent: MouseEvent | TouchEvent) {
-    // If container is scrollable, get the distance from the top
-    let scrollY = 0;
-    if (this.bounds) {
-      scrollY = this.bounds.scrollTop;
-    }
     // Get mouse / touch position
     const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
-    const mmPageY = mmEvent instanceof MouseEvent ? mmEvent.pageY : mmEvent.touches[0].pageY;
+    const mmClientY = mmEvent instanceof MouseEvent ? mmEvent.clientY : mmEvent.touches[0].clientY;
     // Return position
     return {
       left: mmClientX,
-      top: mmPageY + scrollY,
+      top: mmClientY + this.bounds.scrollTop,
     };
   }
 
@@ -221,15 +194,15 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     this.clearSelection();
     // Emit position
     const finalPos: DraggablePosition = {
-      initLeft: this.draggableInitLeft,
-      initTop: this.draggableInitTop,
+      initLeft: this.draggableDimensions.left,
+      initTop: this.draggableDimensions.top,
       offsetLeft: this.getDraggableAttribute('m-offset-x'),
       offsetTop: this.getDraggableAttribute('m-offset-y')
     };
     this.mDragStop.emit(finalPos);
     // This is for window resize
-    this.draggableLeftRatio = finalPos.offsetLeft / this.containerWidth;
-    this.draggableTopRatio = finalPos.offsetTop / this.containerHeight;
+    this.draggableLeftRatio = finalPos.offsetLeft / this.containerDimensions.width;
+    this.draggableTopRatio = finalPos.offsetTop / this.containerDimensions.height;
   }
 
   move(leftPos: number, topPos: number): void {
@@ -237,8 +210,8 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     const checkedPos = this.checkBounds(leftPos, topPos);
 
     const movingPos: DraggableMovingPosition = {
-      initLeft: this.draggableInitLeft,
-      initTop: this.draggableInitTop,
+      initLeft: this.draggableDimensions.left,
+      initTop: this.draggableDimensions.top,
       offsetLeft: checkedPos.offsetLeft,
       offsetTop: checkedPos.offsetTop,
       leftEdge: checkedPos.leftEdge,
@@ -260,6 +233,17 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     this.mDragMove.emit(movingPos);
   }
 
+  initDraggableDimensions() {
+    this.draggableDimensions = {
+      left: this.draggable.offsetLeft,
+      top: this.draggable.offsetTop,
+      width: this.draggable.clientWidth,
+      height: this.draggable.clientHeight
+    };
+    this.draggableLeftRatio = 0;
+    this.draggableTopRatio = 0;
+  }
+
   getContainerDimensions(): void {
     const borderLeftWidth = window.getComputedStyle(this.bounds).borderLeftWidth !== '' ?
       parseInt(window.getComputedStyle(this.bounds).borderLeftWidth, 10) :
@@ -267,18 +251,20 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     const borderTopWidth = window.getComputedStyle(this.bounds).borderTopWidth !== '' ?
       parseInt(window.getComputedStyle(this.bounds).borderTopWidth, 10) :
       0;
-    this.containerWidth = this.bounds.clientWidth;
-    this.containerHeight = this.bounds.scrollHeight;
-    this.containerLeft = this.draggableAbsolutePosition ? borderLeftWidth : this.bounds.offsetLeft + borderLeftWidth;
-    this.containerTop = this.draggableAbsolutePosition ? borderTopWidth : this.bounds.offsetTop + borderTopWidth;
-    console.log(this.containerHeight);
+    const containerRect = this.bounds.getBoundingClientRect();
+    this.containerDimensions = {
+      left: borderLeftWidth + containerRect.left,
+      top: borderTopWidth + containerRect.top,
+      width: this.bounds.clientWidth,
+      height: this.bounds.scrollHeight
+    };
   }
 
   getBounds(): Bounds {
-    const boundLeft: number = this.containerLeft - this.draggable.offsetLeft;
-    const boundRight: number = this.containerWidth - this.draggableWidth - this.draggable.offsetLeft + this.containerLeft;
-    const boundTop: number = this.containerTop - this.draggable.offsetTop;
-    const boundBottom: number = this.containerHeight - this.draggableHeight - this.draggable.offsetTop + this.containerTop;
+    const boundLeft = this.draggableDimensions.left;
+    const boundRight = this.containerDimensions.width - this.draggableDimensions.width - this.draggableDimensions.left;
+    const boundTop = this.draggableDimensions.top;
+    const boundBottom = this.containerDimensions.height - this.draggableDimensions.height - this.draggableDimensions.top;
     return {
       boundLeft: boundLeft,
       boundRight: boundRight,
@@ -340,15 +326,19 @@ export class DraggableDirective implements AfterViewInit, OnDestroy {
     let columnWidth = 1;
     let rowHeight = 1;
     if (this.columns) {
-      columnWidth = this.containerWidth / this.columns;
+      columnWidth = this.containerDimensions.width / this.columns;
     }
     if (this.rows) {
-      rowHeight = this.containerHeight / this.rows;
+      rowHeight = this.containerDimensions.height / this.rows;
     }
     return {
       columnWidth: columnWidth,
       rowHeight: rowHeight
     };
+  }
+
+  resetPosition() {
+    this.draggable.style.transform = 'translateX(0px) translateY(0px)';
   }
 
 }

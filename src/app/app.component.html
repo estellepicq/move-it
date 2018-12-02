@@ -2,7 +2,16 @@
 	<h1>
 		Move.it
 	</h1>
+	<div class="actions">
+		<button (click)="view = 'containers'" [class.active]="view === 'containers'">Containers</button>
+		<button (click)="view = 'dashboard'" [class.active]="view === 'dashboard'">Dashboard</button>
+	</div>
 </div>
 
-<!-- <app-custom-drag-drop></app-custom-drag-drop> -->
-<app-dashboard></app-dashboard>
+<ng-container *ngIf="view === 'containers'">
+	<app-custom-drag-drop></app-custom-drag-drop>
+</ng-container>
+<ng-container *ngIf="view === 'dashboard'">
+	<app-dashboard></app-dashboard>
+</ng-container>
+

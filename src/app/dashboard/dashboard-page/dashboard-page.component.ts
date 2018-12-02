@@ -1,4 +1,5 @@
 import { Component, OnInit, Input, OnDestroy, OnChanges, SimpleChanges, ElementRef } from '@angular/core';
+import { DimensionsOnGrid } from 'src/app/models/draggable-types';
 
 @Component({
   selector: 'app-dashboard-page',
@@ -18,6 +19,13 @@ export class DashboardPageComponent implements OnInit, OnDestroy, OnChanges {
   columnWidth: number;
   rows: number;
   margin: number;
+
+  @Input() items: DimensionsOnGrid[] = [{
+    x: 2,
+    y: 3,
+    w: 1,
+    h: 1
+  }];
 
   constructor(
     private el: ElementRef,

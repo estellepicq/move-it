@@ -28,3 +28,17 @@ export interface Grid {
   columnWidth: number;
   rowHeight: number;
 }
+
+export interface DimensionsPx {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+export interface DimensionsOnGrid {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
