@@ -20,11 +20,11 @@ export class DashboardPageComponent implements OnInit, OnDestroy, OnChanges {
   rows: number;
   margin: number;
 
-  @Input() items: DimensionsOnGrid[] = [{
-    x: 2,
-    y: 3,
-    w: 1,
-    h: 1
+  items: DimensionsOnGrid[] = [{
+    x: 0,
+    y: 2,
+    w: 2,
+    h: 2
   }];
 
   constructor(
@@ -74,6 +74,15 @@ export class DashboardPageComponent implements OnInit, OnDestroy, OnChanges {
       height: this.columnWidth + 'px',
       transform: 'translateY(' + this.columnWidth * i + 'px)',
       display: this.displayGrid ? 'block' : 'none'
+    };
+  }
+
+  getItemStyle(item: DimensionsOnGrid): Partial<CSSStyleDeclaration> {
+    return {
+      top: item.x * this.columnWidth + 'px',
+      left: item.y * this.columnWidth + 'px',
+      width: item.w * this.columnWidth + 'px',
+      height: item.h * this.columnWidth + 'px',
     };
   }
 

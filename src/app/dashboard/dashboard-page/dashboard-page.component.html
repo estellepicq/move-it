@@ -5,8 +5,8 @@
     <div class="grid-column" *ngFor="let column of gridColumns; let i = index;" [ngStyle]="getColumnStyle(i)"></div>
     <div class="grid-row" *ngFor="let row of gridRows; let i = index;" [ngStyle]="getRowStyle(i)"></div>
 
-    <ng-container *ngFor="let item of items">
-      <div appGridDraggable class="draggable" [bounds]="gridBounds" [item]="item">
+    <ng-container *ngFor="let item of items;">
+      <div appGridDraggable class="draggable" [bounds]="gridBounds" [ngStyle]="getItemStyle(item)">
         Hello
       </div>
     </ng-container>

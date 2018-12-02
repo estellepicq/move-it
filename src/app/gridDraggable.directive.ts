@@ -19,7 +19,6 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
   @Input() bounds: HTMLElement = document.body;
   @Input() columns: number;
   @Input() rows: number;
-  @Input() item: DimensionsOnGrid;
 
   // Emitted events
   @Output() mDragStart: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
@@ -70,6 +69,7 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
       this.getContainerDimensions();
       this.initDraggableDimensions();
       this.containerBounds = this.getBounds();
+      console.log(this.draggableDimensions);
     }, 100);
 
     // Get grid
@@ -261,9 +261,9 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
   }
 
   getBounds(): Bounds {
-    const boundLeft = this.draggableDimensions.left;
+    const boundLeft = -this.draggableDimensions.left;
     const boundRight = this.containerDimensions.width - this.draggableDimensions.width - this.draggableDimensions.left;
-    const boundTop = this.draggableDimensions.top;
+    const boundTop = -this.draggableDimensions.top;
     const boundBottom = this.containerDimensions.height - this.draggableDimensions.height - this.draggableDimensions.top;
     return {
       boundLeft: boundLeft,
