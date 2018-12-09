@@ -1,0 +1,51 @@
+.container {
+  min-width: 300px;
+  width: 300px;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 30px;
+}
+
+.draggable {
+  display: flex;
+  flex-direction: column;
+  width: 100px;
+  height: 100px;
+  justify-content: space-around;
+  border: 1px solid black;
+  color: white;
+  background-color: #3a6bad;
+  text-align: center;
+  cursor: grab;
+}
+
+/* BOUNDED-CONTAINER */
+.bounded-container {
+  position: relative;
+  background: #9ba0b8;
+  border: 2px solid black;
+  height: 300px;
+}
+
+.bounded-container .draggable {
+  background-color: #3a6bad;
+  position: absolute;
+  top: 100px;
+  left: 100px;
+  z-index: 1;
+}
+
+.handle {
+  cursor: grab;
+}
+
+/*CODE PREVIEW */
+pre {
+  text-align: left;
+  background-color: black;
+  color: white;
+  margin: 0;
+  width: 100%;
+  font-size: 11px;
+}

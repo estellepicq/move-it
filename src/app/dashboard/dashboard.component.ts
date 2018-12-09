@@ -1,42 +1,24 @@
-import { Component, OnInit, ElementRef, HostListener, Input, AfterViewInit } from '@angular/core';
-import { Subscription, Observable, of } from 'rxjs';
+import { Component, OnInit, ElementRef } from '@angular/core';
+import { DraggableMovingPosition } from '../directives/draggable-types';
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
 
-  dashboardDimensions: DOMRect;
-  pageHeight: number;
-  pages$: Observable<number[]>;
-  widgetPositionRequestSub: Subscription;
-  dashboardModeRatio = 0.7;
-
-  // grid
-  // tslint:disable-next-line:no-inferrable-types
-  @Input() columns: number = 10;
-
   constructor(
     private el: ElementRef,
-  ) { }
-
-  // Listen resize event to have current dashboard width
-  @HostListener('window:resize', ['$event'])
-  handleResizeEvent() {
-    this.dashboardDimensions = this.el.nativeElement.getBoundingClientRect();
-    this.pageHeight = this.dashboardDimensions.width / this.dashboardModeRatio;
-    }
+    ) { }
 
   ngOnInit() {
-
-    this.dashboardDimensions = this.el.nativeElement.getBoundingClientRect();
-    this.pageHeight = this.dashboardDimensions.width / this.dashboardModeRatio;
-
-    this.pages$ = of([0, 1]);
-
   }
 
+  onMove(event: DraggableMovingPosition): void {
+    const positionElt = this.el.nativeElement.querySelector('#position');
+    positionElt.textContent = `top: ${event.initTop + event.offsetTop}px; left: ${event.initLeft + event.offsetLeft}px`;
+  }
 
 }
+

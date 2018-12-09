@@ -1,9 +1,55 @@
-<div class="dashboard-container">
+<div class="container">
+  <h3 style="color: white;">1. Simple draggable element</h3>
+  <div appDraggable class="draggable">
+    <div>Move me everywhere</div>
+    <div>🔥</div>
+  </div>
+  <pre style="text-align: center;"><code>
+  &lt;div appDraggable&gt;&lt;/div&gt;
+  </code></pre>
+</div>
 
-  <app-dashboard-page *ngFor="let page of pages$ | async;"
-    [height]="pageHeight"
-    [dashboardWidth]="dashboardDimensions.width"
-    [columns]="10">
-  </app-dashboard-page>
+<div class="container bounded-container" #bounds>
+  <h3>2. Bounded draggable element</h3>
+  <div appDraggable [bounds]="bounds" class="draggable">
+    <div>Can't get out of my box</div>
+    <div>🦄</div>
+  </div>
+  <pre style="position: absolute; bottom: 0;"><code>
+  &lt;div #bound&gt;
+    &lt;div appDraggable [bounds]="bounds"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  </code></pre>
+</div>
 
+<div class="container bounded-container" #bounds2>
+  <h3>3. Drag from a specific handle</h3>
+  <div appDraggable [bounds]="bounds2" [draggableFrom]="'handle'" class="draggable" style="cursor: auto;">
+    <div class="handle">🖐️</div>
+    <div>Can be drag only from my handle</div>
+  </div>
+  <pre style="position: absolute; bottom: 0;"><code>
+  &lt;div appDraggable [draggableFrom]="'handle'"&gt;
+    &lt;div class="handle"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  </code></pre>
+</div>
+
+<div class="container bounded-container" style="height: 400px" #bounds3>
+  <h3>4. Listen to events</h3>
+  <div appDraggable [bounds]="bounds3" class="draggable" (mDragMove)="onMove($event)">
+    <div id="position">top: 100px; left: 100px;</div>
+  </div>
+  <pre style="position: absolute; bottom: 0;"><code>
+  &lt;div appDraggable (mDragMove)="onMove($event)"&gt;
+  &lt;/div&gt;
+
+  onMove(evt: DraggableMovingPosition): void &#123;
+    const posElt =
+      document.getElementById('position');
+    posElt.textContent =
+      `top: $&#123;evt.initTop + evt.offsetTop&#125;px;
+      left: $&#123;evt.initLeft + evt.offsetLeft&#125;px`;
+  &#125;
+  </code></pre>
 </div>

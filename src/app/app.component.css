@@ -1,38 +1,8 @@
 .header {
-  height: 125px;
+  background-color: #3a6bad;
   color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.header h1 {
-  margin: 0;
-}
-
-.header .actions {
-  margin-top: 20px;
-}
-
-.header .actions button {
-  border: none;
-  border-radius: 2px;
-  height: 36px;
-  line-height: 36px;
-  padding: 0 16px;
-  text-transform: uppercase;
-  font-size: 14px;
-  outline: 0;
-  text-decoration: none;
-  color: #fff;
-  background-color: #44a3b4;
-  text-align: center;
-  letter-spacing: .5px;
-  margin-right: 10px;
-}
-
-.header .actions button.active {
-  background-color: #1f6f7d;
-  border: 1px solid white;
 }

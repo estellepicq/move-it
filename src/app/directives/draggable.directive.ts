@@ -1,24 +1,16 @@
-import { Directive, ElementRef, Input, OnInit, Output, EventEmitter, OnDestroy, AfterViewInit } from '@angular/core';
+import { Directive, ElementRef, Input, Output, EventEmitter, OnDestroy, AfterViewInit } from '@angular/core';
 import { Observable, fromEvent, Subscription, merge } from 'rxjs';
 import { map, takeUntil, mergeMap, filter, tap } from 'rxjs/operators';
-import { DraggablePosition,
-  DraggableMovingPosition,
-  MousePosition,
-  Bounds,
-  Grid,
-  DimensionsPx,
-  DimensionsOnGrid } from './models/draggable-types';
+import { DraggablePosition, DraggableMovingPosition, MousePosition, Bounds, DimensionsPx } from './draggable-types';
 
 @Directive({
-  selector: '[appGridDraggable]'
+  selector: '[appDraggable]'
 })
-export class GridDraggableDirective implements AfterViewInit, OnDestroy {
+export class DraggableDirective implements AfterViewInit, OnDestroy {
 
   // Options
   @Input() draggableFrom: string;
   @Input() bounds: HTMLElement = document.body;
-  @Input() columns: number;
-  @Input() rows: number;
 
   // Emitted events
   @Output() mDragStart: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
@@ -35,7 +27,6 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
   draggableDimensions: DimensionsPx;
   draggableLeftRatio: number;
   draggableTopRatio: number;
-  grid: Grid;
 
   // Event observables
   mousedown$: Observable<MouseEvent>;
@@ -69,16 +60,12 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
       this.getContainerDimensions();
       this.initDraggableDimensions();
       this.containerBounds = this.getBounds();
-      console.log(this.draggableDimensions);
     }, 100);
-
-    // Get grid
-    this.grid = this.getGrid();
 
     // Handle from a specific part of draggable element
     this.handle = this.draggable;
     if (this.draggableFrom) {
-      this.handle = this.draggable.querySelector('#' + this.draggableFrom);
+      this.handle = this.draggable.querySelector('.' + this.draggableFrom);
     }
 
     // Create event listeners
@@ -107,8 +94,6 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
       this.getContainerDimensions();
       // Get container bounds
       this.containerBounds = this.getBounds();
-      // Get grid
-      this.grid = this.getGrid();
       // Move element proportionnally to its container
       this.move(this.containerDimensions.width * this.draggableLeftRatio,
         this.containerDimensions.height * this.draggableTopRatio);
@@ -274,8 +259,8 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
   }
 
   checkBounds(leftPos: number, topPos: number): Partial<DraggableMovingPosition> {
-    let newLeftPos = Math.round(leftPos / this.grid.columnWidth) * this.grid.columnWidth ;
-    let newTopPos = Math.round(topPos / this.grid.rowHeight) * this.grid.rowHeight;
+    let newLeftPos = leftPos;
+    let newTopPos = topPos;
     let leftEdge = false;
     let rightEdge = false;
     let topEdge = false;
@@ -320,21 +305,6 @@ export class GridDraggableDirective implements AfterViewInit, OnDestroy {
 
   getDraggableAttribute(attr: string): number {
     return +this.draggable.getAttribute(attr);
-  }
-
-  getGrid(): Grid {
-    let columnWidth = 1;
-    let rowHeight = 1;
-    if (this.columns) {
-      columnWidth = this.containerDimensions.width / this.columns;
-    }
-    if (this.rows) {
-      rowHeight = this.containerDimensions.height / this.rows;
-    }
-    return {
-      columnWidth: columnWidth,
-      rowHeight: rowHeight
-    };
   }
 
   resetPosition() {

@@ -4,7 +4,7 @@ body {
   margin: 0;
   background: #393f4d;
   height: 100%;
-  overflow: hidden; /* for dashboard mode */
+  overflow-x: hidden;
 }
 
 .no-select ::selection {
@@ -16,7 +16,7 @@ body {
 }
 
 .moving {
-  box-sizing: border-box;
+  /*box-sizing: border-box;*/
   border: 1px solid #eee !important;
   z-index: 9999;
 }
