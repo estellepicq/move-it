@@ -23,30 +23,30 @@ Add `appDraggable` directive to DOM elements to enable Drag & Drop.
 # Draggable
 
 Use `appDraggable` directive to make the DOM element draggable.
-    + Simple example:
-
-      ```html
-      <div appDraggable>Move me everywhere</div>
-      ```
-
-    + Use `[bounds]` to limit the draggable element into a container:
+  + Simple example:
 
     ```html
-    <div class="container" #bounds>
-      <div appDraggable [bounds]="bounds">
-        <div>Can't get out of my box</div>
-      </div>
-    </div>
+    <div appDraggable>Move me everywhere</div>
     ```
 
-    + Use `[draggableFrom]` to move element from a specific handle:
+  + Use `[bounds]` to limit the draggable element into a container:
 
-      ```html
-      <div appDraggable [draggableFrom]="handle">
-        <div class="handle">Handle</div>
-        <div>Can be drag only from my handle</div>
-      </div>
-      ```
+  ```html
+  <div class="container" #bounds>
+    <div appDraggable [bounds]="bounds">
+      <div>Can't get out of my box</div>
+    </div>
+  </div>
+  ```
+
+  + Use `[draggableFrom]` to move element from a specific handle:
+
+    ```html
+    <div appDraggable [draggableFrom]="handle">
+      <div class="handle">Handle</div>
+      <div>Can be drag only from my handle</div>
+    </div>
+    ```
 
 # Events
 
