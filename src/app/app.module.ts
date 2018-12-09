@@ -3,16 +3,16 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { DraggableDirective } from './directives/draggable.directive';
+import { DraggableModule } from 'moveit/draggable.module';
 
 @NgModule({
   declarations: [
     AppComponent,
     DashboardComponent,
-    DraggableDirective
   ],
   imports: [
     BrowserModule,
+    DraggableModule
   ],
   providers: [],
   bootstrap: [AppComponent]
