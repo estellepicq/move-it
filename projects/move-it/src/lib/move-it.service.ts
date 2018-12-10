@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { DimensionsPx, Bounds, DraggableMovingPosition, ResizableMovingDimensions } from './draggable-types';
+import { DimensionsPx, Bounds, DraggableMovingPosition, ResizableMovingDimensions } from './move-it-types';
 
 @Injectable()
-export class DraggableService {
+export class MoveItService {
 
   // Draggable and container positions
   containerDimensions: DimensionsPx;

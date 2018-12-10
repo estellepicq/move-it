@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { DraggableModule } from '../../../moveit/draggable.module';
+import { MoveItModule } from 'move-it';
 
 @NgModule({
   declarations: [
@@ -12,7 +12,7 @@ import { DraggableModule } from '../../../moveit/draggable.module';
   ],
   imports: [
     BrowserModule,
-    DraggableModule
+    MoveItModule
   ],
   providers: [],
   bootstrap: [AppComponent]

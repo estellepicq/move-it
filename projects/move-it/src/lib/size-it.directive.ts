@@ -1,13 +1,13 @@
 import { Directive, Input, AfterViewInit, Output, EventEmitter } from '@angular/core';
-import { DraggableService } from './draggable.service';
+import { MoveItService } from './move-it.service';
 import { Observable, fromEvent } from 'rxjs';
 import { mergeMap, map, takeUntil, tap } from 'rxjs/operators';
-import { MousePosition, DimensionsPx, ResizableDimensions, ResizableMovingDimensions } from './draggable-types';
+import { MousePosition, DimensionsPx, ResizableDimensions, ResizableMovingDimensions } from './move-it-types';
 
 @Directive({
-  selector: '[appResizable]'
+  selector: '[ngSizeit]'
 })
-export class ResizableDirective implements AfterViewInit {
+export class SizeItDirective implements AfterViewInit {
 
   @Input() bounds: HTMLElement = document.body;
   @Input() columnWidth = 1; // px
@@ -26,14 +26,14 @@ export class ResizableDirective implements AfterViewInit {
   @Output() mResizeStop: EventEmitter<ResizableDimensions> = new EventEmitter<ResizableDimensions>();
 
   constructor(
-    private draggableService: DraggableService,
+    private moveitService: MoveItService,
   ) { }
 
   ngAfterViewInit() {
-    this.draggableService.resizeHandle = this.draggableService.draggable.querySelector('.resize-handle');
+    this.moveitService.resizeHandle = this.moveitService.draggable.querySelector('.resize-handle');
 
     // Create event listeners
-    this.mousedown$ = fromEvent(this.draggableService.resizeHandle, 'mousedown') as Observable<MouseEvent>;
+    this.mousedown$ = fromEvent(this.moveitService.resizeHandle, 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
 
@@ -65,10 +65,10 @@ export class ResizableDirective implements AfterViewInit {
 
   onMouseDown(mdEvent: MouseEvent | TouchEvent): MousePosition {
     document.body.classList.add('no-select', 'resizing');
-    const width = parseInt(this.draggableService.draggable.style.width, 10);
-    const height = parseInt(this.draggableService.draggable.style.height, 10);
+    const width = parseInt(this.moveitService.draggable.style.width, 10);
+    const height = parseInt(this.moveitService.draggable.style.height, 10);
     const startDim: ResizableDimensions = {
-      item: this.draggableService.draggable,
+      item: this.moveitService.draggable,
       width: width,
       height: height,
     };
@@ -90,20 +90,20 @@ export class ResizableDirective implements AfterViewInit {
     const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
     const mmClientY = mmEvent instanceof MouseEvent ? mmEvent.clientY : mmEvent.touches[0].clientY;
     return {
-      left: mmClientX - this.draggableService.containerDimensions.left,
-      top: mmClientY - this.draggableService.containerDimensions.top + this.bounds.scrollTop
+      left: mmClientX - this.moveitService.containerDimensions.left,
+      top: mmClientY - this.moveitService.containerDimensions.top + this.bounds.scrollTop
     };
   }
 
   onMouseUp(): void {
-    this.draggableService.clearSelection();
+    this.moveitService.clearSelection();
     document.body.classList.remove('no-select', 'resizing');
-    this.draggableService.initDraggableDimensions();
-    this.draggableService.getBounds();
-    const width = parseInt(this.draggableService.draggable.style.width, 10);
-    const height = parseInt(this.draggableService.draggable.style.height, 10);
+    this.moveitService.initDraggableDimensions();
+    this.moveitService.getBounds();
+    const width = parseInt(this.moveitService.draggable.style.width, 10);
+    const height = parseInt(this.moveitService.draggable.style.height, 10);
     const finalDim: ResizableDimensions = {
-      item: this.draggableService.draggable,
+      item: this.moveitService.draggable,
       width: width,
       height: height,
     };
@@ -111,17 +111,17 @@ export class ResizableDirective implements AfterViewInit {
   }
 
   resize(pos): void {
-    const checkedDim = this.draggableService.checkResizeBounds(pos.x, pos.y, this.columnWidth, this.minWidth, this.minHeight);
+    const checkedDim = this.moveitService.checkResizeBounds(pos.x, pos.y, this.columnWidth, this.minWidth, this.minHeight);
 
     const movingDim: ResizableDimensions = {
-      item: this.draggableService.draggable,
+      item: this.moveitService.draggable,
       width: checkedDim.x,
       height: checkedDim.y
     };
     this.mResizeMove.emit(movingDim);
 
-    this.draggableService.draggable.style.width = checkedDim.x + 'px';
-    this.draggableService.draggable.style.height = checkedDim.y + 'px';
+    this.moveitService.draggable.style.width = checkedDim.x + 'px';
+    this.moveitService.draggable.style.height = checkedDim.y + 'px';
   }
 
 }

@@ -1,5 +1,4 @@
 import { Component, OnInit, ElementRef } from '@angular/core';
-import { DraggableMovingPosition } from '../../../../moveit/draggable-types';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,7 +14,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit() {
   }
 
-  onMove(event: DraggableMovingPosition): void {
+  onMove(event): void {
     const positionElt = this.el.nativeElement.querySelector('#position');
     positionElt.textContent = `top: ${event.initTop + event.offsetTop}px; left: ${event.initLeft + event.offsetLeft}px`;
   }

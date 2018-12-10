@@ -7,6 +7,10 @@
   margin-bottom: 30px;
 }
 
+.simple-example {
+  height: 200px;
+}
+
 .draggable {
   display: flex;
   flex-direction: column;
@@ -18,6 +22,7 @@
   background-color: #3a6bad;
   text-align: center;
   cursor: grab;
+  position: relative;
 }
 
 /* BOUNDED-CONTAINER */
@@ -38,6 +43,15 @@
 
 .handle {
   cursor: grab;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  border-bottom: 12px solid #aaa;
+  border-left: 12px solid transparent;
 }
 
 /*CODE PREVIEW */
