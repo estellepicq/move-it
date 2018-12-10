@@ -1,5 +1,5 @@
 import { Component, OnInit, ElementRef } from '@angular/core';
-import { DraggableMovingPosition } from '../../moveit/draggable-types';
+import { DraggableMovingPosition } from '../../../../moveit/draggable-types';
 
 @Component({
   selector: 'app-dashboard',

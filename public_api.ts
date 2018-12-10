@@ -1,1 +1,1 @@
-export * from './src/moveit/draggable.module';
+export * from './projects/moveit/draggable.module';

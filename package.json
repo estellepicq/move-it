@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "ng serve demo --port 4201",
+    "build": "ng build --prod moveit",
+    "build:watch": "ng build --watch moveit",
+    "build:demo": "ng build --prod demo",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
