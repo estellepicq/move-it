@@ -1,9 +1,12 @@
 export interface MousePosition {
   left: number;
   top: number;
+  w?: number;
+  h?: number;
 }
 
 export interface DraggablePosition {
+  item: HTMLElement;
   initLeft: number;
   initTop: number;
   offsetLeft: number;
@@ -41,4 +44,15 @@ export interface DimensionsOnGrid {
   y: number;
   w: number;
   h: number;
+}
+
+export interface ResizableDimensions {
+  item: HTMLElement;
+  width: number;
+  height: number;
+}
+
+export interface ResizableMovingDimensions {
+  x: number;
+  y: number;
 }
