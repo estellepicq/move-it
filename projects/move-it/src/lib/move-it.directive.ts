@@ -47,11 +47,6 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     // Find draggable element and disable html drag
     this.moveitService.draggable = this.el.nativeElement;
     this.moveitService.draggable.draggable = false;
-    if (this.moveitService.draggable.style.transform !== '') {
-      const initOffsets = this.moveitService.draggable.style.transform.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g);
-      this.moveitService.setDraggableAttribute('m-offset-x', +initOffsets[0]);
-      this.moveitService.setDraggableAttribute('m-offset-y', +initOffsets[1]);
-    }
 
     // Get dimensions
     setTimeout(() => {
@@ -150,8 +145,8 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
       item: this.moveitService.draggable,
       initLeft: this.moveitService.draggableDimensions.left,
       initTop: this.moveitService.draggableDimensions.top,
-      offsetLeft: this.moveitService.getDraggableAttribute('m-offset-x'),
-      offsetTop: this.moveitService.getDraggableAttribute('m-offset-y')
+      offsetLeft: this.moveitService.getOffsetX(),
+      offsetTop: this.moveitService.getOffsetY()
     };
     this.mDragStart.emit(startPos);
     // Get pointer start position and return it
@@ -182,14 +177,26 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     this.moveitService.draggable.classList.remove('moving');
     document.body.classList.remove('no-select', 'dragging');
     this.moveitService.clearSelection();
+
+    const shadowOffsetX = this.moveitService.draggable.style.filter !== '' ?
+      parseFloat(this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[4]) : 0;
+    const shadowOffsetY = this.moveitService.draggable.style.filter !== '' ?
+      parseFloat(this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[5]) : 0;
+    this.moveitService.draggable.style.filter = 'unset';
+
     // Emit position
     const finalPos: DraggablePosition = {
       item: this.moveitService.draggable,
       initLeft: this.moveitService.draggableDimensions.left,
       initTop: this.moveitService.draggableDimensions.top,
-      offsetLeft: this.moveitService.getDraggableAttribute('m-offset-x'),
-      offsetTop: this.moveitService.getDraggableAttribute('m-offset-y')
+      offsetLeft: this.moveitService.getOffsetX() + shadowOffsetX,
+      offsetTop: this.moveitService.getOffsetY() + shadowOffsetY
     };
+
+    const translateX = 'translateX(' + finalPos.offsetLeft + 'px) ';
+    const translateY = 'translateY(' + finalPos.offsetTop + 'px)';
+    this.moveitService.draggable.style.transform = translateX + translateY;
+
     this.mDragStop.emit(finalPos);
 
     // This is for window resize
@@ -214,22 +221,17 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     };
 
     // Move draggable element
-    const translateX = 'translateX(' + movingPos.offsetLeft + 'px) ';
-    const translateY = 'translateY(' + movingPos.offsetTop + 'px)';
+    const translateX = 'translateX(' + leftPos + 'px) ';
+    const translateY = 'translateY(' + topPos + 'px)';
     this.moveitService.draggable.style.transform = translateX + translateY;
 
-    // Update m-offset-x and m-offset-y
-    this.moveitService.setDraggableAttribute('m-offset-x', movingPos.offsetLeft);
-    this.moveitService.setDraggableAttribute('m-offset-y', movingPos.offsetTop);
+    // Shadow
+    const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' +
+      (checkedPos.offsetLeft - leftPos) + 'px ' + (checkedPos.offsetTop - topPos) + 'px 0px)';
+    this.moveitService.draggable.style.filter = shadowFilter;
 
     // Emit position
     this.mDragMove.emit(movingPos);
-  }
-
-  resetPosition() {
-    this.moveitService.draggable.style.transform = 'translateX(0px) translateY(0px)';
-    this.moveitService.setDraggableAttribute('m-offset-x', 0);
-    this.moveitService.setDraggableAttribute('m-offset-y', 0);
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -238,9 +240,9 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
       this.moveitService.initDraggableDimensions();
       this.moveitService.getBounds();
       this.moveitService.draggableLeftRatio =
-        this.moveitService.getDraggableAttribute('m-offset-x') / this.moveitService.containerDimensions.width;
+        this.moveitService.getOffsetX() / this.moveitService.containerDimensions.width;
       this.moveitService.draggableTopRatio =
-        this.moveitService.getDraggableAttribute('m-offset-y') / this.moveitService.containerDimensions.height;
+        this.moveitService.getOffsetY() / this.moveitService.containerDimensions.height;
     }
   }
 

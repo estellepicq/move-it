@@ -11,8 +11,8 @@ export class SizeItDirective implements AfterViewInit {
 
   @Input() bounds: HTMLElement = document.body;
   @Input() columnWidth = 1; // px
-  @Input() minWidth = 1; // columns
-  @Input() minHeight = 1; // columns
+  @Input() minWidth = 0; // columns
+  @Input() minHeight = 0; // columns
 
   // Event observables
   mousedown$: Observable<MouseEvent>;

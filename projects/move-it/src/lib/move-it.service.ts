@@ -95,19 +95,21 @@ export class MoveItService {
     }
   }
 
-  setDraggableAttribute(attr: string, value: number): void {
-    this.draggable.setAttribute(attr, value.toString());
+  getOffsetX() {
+    return this.draggable.style.transform !== '' ? Number(this.draggable.style.transform.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[0]) : 0;
   }
 
-  getDraggableAttribute(attr: string): number {
-    return +this.draggable.getAttribute(attr);
+  getOffsetY() {
+    return this.draggable.style.transform !== '' ? Number(this.draggable.style.transform.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[1]) : 0;
   }
 
   checkResizeBounds(x: number, y: number, columnWidth: number, minWidth: number, minHeight: number): ResizableMovingDimensions {
-    const offsetX = this.getDraggableAttribute('m-offset-x');
-    const offsetY = this.getDraggableAttribute('m-offset-y');
+    const offsetX = this.getOffsetX();
+    const offsetY = this.getOffsetY();
     let newX = Math.round((x - offsetX) / columnWidth ) * columnWidth;
     let newY = Math.round((y - offsetY) / columnWidth ) * columnWidth;
+
+    console.log(x, y, newX, newY);
 
     if (newX < minWidth * columnWidth) {
       newX = minWidth * columnWidth;
