@@ -65,8 +65,8 @@ export class SizeItDirective implements AfterViewInit {
 
   onMouseDown(mdEvent: MouseEvent | TouchEvent): MousePosition {
     document.body.classList.add('no-select', 'resizing');
-    const width = parseInt(this.moveitService.draggable.style.width, 10);
-    const height = parseInt(this.moveitService.draggable.style.height, 10);
+    const width = this.moveitService.draggable.getBoundingClientRect().width;
+    const height = this.moveitService.draggable.getBoundingClientRect().height;
     const startDim: ResizableDimensions = {
       item: this.moveitService.draggable,
       width: width,
@@ -90,8 +90,8 @@ export class SizeItDirective implements AfterViewInit {
     const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
     const mmClientY = mmEvent instanceof MouseEvent ? mmEvent.clientY : mmEvent.touches[0].clientY;
     return {
-      left: mmClientX - this.moveitService.containerDimensions.left,
-      top: mmClientY - this.moveitService.containerDimensions.top + this.bounds.scrollTop
+      left: mmClientX - this.moveitService.containerDimensions.left - this.moveitService.draggableDimensions.left,
+      top: mmClientY - this.moveitService.containerDimensions.top - this.moveitService.draggableDimensions.top + this.bounds.scrollTop
     };
   }
 

@@ -109,8 +109,6 @@ export class MoveItService {
     let newX = Math.round((x - offsetX) / columnWidth ) * columnWidth;
     let newY = Math.round((y - offsetY) / columnWidth ) * columnWidth;
 
-    console.log(x, y, newX, newY);
-
     if (newX < minWidth * columnWidth) {
       newX = minWidth * columnWidth;
     }

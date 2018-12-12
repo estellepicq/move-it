@@ -178,9 +178,9 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     document.body.classList.remove('no-select', 'dragging');
     this.moveitService.clearSelection();
 
-    const shadowOffsetX = this.moveitService.draggable.style.filter !== '' ?
+    const shadowOffsetX = this.moveitService.draggable.style.filter !== null ?
       parseFloat(this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[4]) : 0;
-    const shadowOffsetY = this.moveitService.draggable.style.filter !== '' ?
+    const shadowOffsetY = this.moveitService.draggable.style.filter !== null ?
       parseFloat(this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[5]) : 0;
     this.moveitService.draggable.style.filter = 'unset';
 
