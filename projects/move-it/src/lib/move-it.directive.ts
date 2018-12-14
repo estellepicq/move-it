@@ -6,14 +6,14 @@ import { MoveItService } from './move-it.service';
 
 @Directive({
   selector: '[ngMoveit]',
-  providers: [ MoveItService ]
+  providers: [MoveItService]
 })
 export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
 
   @Input() draggableFrom: string;
   @Input() bounds: HTMLElement = document.body;
   @Input() columnWidth = 1;
-  @Input() pagesNb: number;
+  @Input() dashboardDimensionsChanged: number;
 
   // Emitted events
   @Output() mDragStart: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
@@ -91,8 +91,10 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
       // Get container bounds
       this.moveitService.getBounds();
       // Move element proportionnally to its container
-      this.move(this.moveitService.containerDimensions.width * this.moveitService.draggableLeftRatio,
-        this.moveitService.containerDimensions.height * this.moveitService.draggableTopRatio);
+      if (this.bounds === document.body) {
+        this.move(this.moveitService.containerDimensions.width * this.moveitService.draggableLeftRatio,
+          this.moveitService.containerDimensions.height * this.moveitService.draggableTopRatio);
+      }
     });
   }
 
@@ -105,10 +107,14 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     // START LISTENER
     return this.start$.pipe(
       // Only from left button or any touch event
-      filter(mdEvent => (mdEvent instanceof MouseEvent && mdEvent.button === 0
-        || mdEvent instanceof TouchEvent)
-        // && (mdEvent.target as Element).classList.contains(this.draggableFrom)
-        ),
+      filter(mdEvent => (mdEvent instanceof MouseEvent
+        && mdEvent.button === 0 // left click
+        && (this.draggableFrom // draggableFrom provided
+        && (mdEvent.target as Element).classList.contains(this.draggableFrom) // only handle (and not handle children)
+        || (this.draggableFrom === undefined && (mdEvent.target as Element).className !== 'resize-handle')) // exclude resize-handle
+        // || mdEvent instanceof TouchEvent
+        )
+      ),
       mergeMap(mdEvent => {
         const mdPos: MousePosition = this.onMouseDown(mdEvent);
         // MOVE LISTENER
@@ -178,12 +184,10 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     document.body.classList.remove('no-select', 'dragging');
     this.moveitService.clearSelection();
 
-    const shadowOffsetX = this.moveitService.draggable.style.filter !== null ?
-      parseFloat(this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[4]) : 0;
-    const shadowOffsetY = this.moveitService.draggable.style.filter !== null ?
-      parseFloat(this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[5]) : 0;
+    const shadowOffset = this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g);
+    const shadowOffsetX = shadowOffset ? parseFloat(shadowOffset[4]) : 0;
+    const shadowOffsetY = shadowOffset ? parseFloat(shadowOffset[5]) : 0;
     this.moveitService.draggable.style.filter = 'unset';
-
     // Emit position
     const finalPos: DraggablePosition = {
       item: this.moveitService.draggable,
@@ -196,7 +200,6 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     const translateX = 'translateX(' + finalPos.offsetLeft + 'px) ';
     const translateY = 'translateY(' + finalPos.offsetTop + 'px)';
     this.moveitService.draggable.style.transform = translateX + translateY;
-
     this.mDragStop.emit(finalPos);
 
     // This is for window resize
@@ -225,9 +228,8 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     const translateY = 'translateY(' + topPos + 'px)';
     this.moveitService.draggable.style.transform = translateX + translateY;
 
-    // Shadow
-    const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' +
-      (checkedPos.offsetLeft - leftPos) + 'px ' + (checkedPos.offsetTop - topPos) + 'px 0px)';
+    // tslint:disable-next-line:max-line-length
+    const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' + (checkedPos.offsetLeft - leftPos) + 'px ' + (checkedPos.offsetTop - topPos) + 'px 0px)';
     this.moveitService.draggable.style.filter = shadowFilter;
 
     // Emit position
@@ -235,7 +237,8 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['pagesNb'] && !changes['pagesNb'].firstChange) {
+    // new pages added to dashboard or dezoomed dashboard
+    if (changes['dashboardDimensionsChanged'] && !changes['dashboardDimensionsChanged'].firstChange) {
       this.moveitService.getContainerDimensions(this.bounds);
       this.moveitService.initDraggableDimensions();
       this.moveitService.getBounds();
@@ -243,6 +246,21 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
         this.moveitService.getOffsetX() / this.moveitService.containerDimensions.width;
       this.moveitService.draggableTopRatio =
         this.moveitService.getOffsetY() / this.moveitService.containerDimensions.height;
+    }
+
+    if (changes['draggableFrom'] && !changes['draggableFrom'].firstChange) {
+      // Change of draggableFrom input
+      this.moveitService.handle = this.moveitService.draggable;
+      if (this.draggableFrom) {
+        setTimeout(() => this.moveitService.handle = this.moveitService.draggable.querySelector('.' + this.draggableFrom));
+      }
+      this.mousedown$ = fromEvent(this.moveitService.handle, 'mousedown') as Observable<MouseEvent>;
+      this.touchstart$ = fromEvent(this.moveitService.handle, 'touchstart') as Observable<TouchEvent>;
+      this.start$ = merge(this.mousedown$, this.touchstart$);
+      this.drag$ = this.initDragObservable();
+      this.dragSub = this.drag$.subscribe(mousePos => {
+        this.move(mousePos.left, mousePos.top);
+      });
     }
   }
 
