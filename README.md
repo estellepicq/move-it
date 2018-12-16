@@ -1,25 +1,16 @@
 # move-it
 
 Drag & Drop & Resize enabled with Angular directives.
+Chrome and Firefox compatible.
+
+[Demo](http://moveit.estellepicq.com/)
 
 ## Table of contents 
-1. [Getting Started](#getting-started)
-2. [Latest Update](#latest-update)
-3. [Installation](#installation)
-4. [Draggable](#draggable)
-5. [Resizable](#resizable)
-6. [Events](#events)
-7. [Local Development](#local-development)
-
-# Getting Started
-Add `ngMoveit` directive to DOM elements to enable Drag & Drop.
-
-# Latest Update
-+ 2018.12.16: 0.1.0
-  + Ready for NPM release
-
-+ 2018.12.09: 0.0.1
-  + Init version with demo
+1. [Installation](#installation)
+2. [Draggable](#draggable)
+3. [Resizable](#resizable)
+4. [Events](#events)
+5. [Local Development](#local-development)
 
 # Installation
 
