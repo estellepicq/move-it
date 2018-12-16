@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { MoveItModule } from 'move-it';
+import { MoveItModule } from '../../../move-it/src/lib/move-it.module';
 
 @NgModule({
   declarations: [
