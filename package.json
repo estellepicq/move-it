@@ -1,12 +1,17 @@
 {
   "name": "move-it",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve demo --port 4201",
     "build:js": "ng build --prod move-it",
-    "build:css": "node scripts/build-css",
-    "build": "ng build --prod move-it && node scripts/build-css",
+    "copy-css": "copy .\\projects\\move-it\\src\\lib\\move-it.css .\\dist\\move-it\\lib",
+    "build:lib": "npm run build:js && npm run copy-css",
+    "copy-readme": "copy .\\README.md .\\dist\\move-it",
+    "copy-license": "copy .\\LICENSE .\\dist\\move-it",
+    "copy-files": "npm run copy-readme && npm run copy-license",
+    "npm_pack": "cd dist/move-it && npm pack",
+    "package": "npm run build:lib && npm run copy-files && npm run npm_pack",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"

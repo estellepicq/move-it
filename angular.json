@@ -24,7 +24,7 @@
             ],
             "styles": [
               "projects/demo/src/styles.css",
-              "dist/css/move-it.css"
+              "dist/move-it/lib/move-it.css"
             ],
             "scripts": []
           },
@@ -74,7 +74,7 @@
             "karmaConfig": "projects/demo/src/karma.conf.js",
             "styles": [
               "projects/demo/src/styles.css",
-              "dist/css/move-it.css"
+              "dist/move-it/lib/move-it.css"
             ],
             "scripts": [],
             "assets": [

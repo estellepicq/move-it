@@ -6,3 +6,14 @@
   align-items: center;
   justify-content: center;
 }
+
+i {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+  font-size: 40px;
+}
+
+a, a:hover, a:active {
+  color: white;
+}

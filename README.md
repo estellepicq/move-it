@@ -1,7 +1,6 @@
 # move-it
 
 Drag & Drop & Resize enabled with Angular directives.
-to be completed: live demo link
 
 ## Table of contents 
 1. [Getting Started](#getting-started)
@@ -10,18 +9,21 @@ to be completed: live demo link
 4. [Draggable](#draggable)
 5. [Resizable](#resizable)
 6. [Events](#events)
-7. [Demo](#demo)
+7. [Local Development](#local-development)
 
 # Getting Started
 Add `ngMoveit` directive to DOM elements to enable Drag & Drop.
 
 # Latest Update
++ 2018.12.16: 0.1.0
+  + Ready for NPM release
+
 + 2018.12.09: 0.0.1
   + Init version with demo
 
 # Installation
 
-to be completed: instructions
+`npm install move-it`
 
 # Draggable
 
@@ -108,10 +110,11 @@ Use `ngSizeit` directive to make the DOM element resizable.
     </div>
     ```
 
-# Demo
+# Local development
 You can clone this repo and launch the demo page on your local machine:
 ```bash
 npm install
+npm run build:lib
 npm run start
 ```
 

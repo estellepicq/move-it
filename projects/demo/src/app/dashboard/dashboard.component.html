@@ -44,7 +44,7 @@
   &lt;div ngMoveit (mDragMove)="onMove($event)"&gt;
   &lt;/div&gt;
 
-  onMove(evt: DraggableMovingPosition): void &#123;
+  onMove(evt) &#123;
     const posElt =
       document.getElementById('position');
     posElt.textContent =
