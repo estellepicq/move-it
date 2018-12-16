@@ -45,15 +45,6 @@
   cursor: grab;
 }
 
-.resize-handle {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
-  border-bottom: 12px solid #aaa;
-  border-left: 12px solid transparent;
-}
-
 /*CODE PREVIEW */
 pre {
   text-align: left;

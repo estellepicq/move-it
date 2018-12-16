@@ -1,0 +1,29 @@
+.no-select ::selection {
+  background: transparent;
+}
+
+.no-select ::-moz-selection {
+  background: transparent;
+}
+
+.dragging {
+  cursor: move;
+}
+
+.resizing {
+  cursor: se-resize;
+}
+
+.resize-shadow {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  width: 10px;
+  height: 10px;
+  background: #aaa;
+}

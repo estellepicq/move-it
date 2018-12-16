@@ -1,22 +1,19 @@
 import { Injectable } from '@angular/core';
-import { DimensionsPx, Bounds, DraggableMovingPosition, ResizableMovingDimensions } from './move-it-types';
+import { IDimensions, IBounds, IPosition } from './move-it-types';
 
 @Injectable()
 export class MoveItService {
 
   // Draggable and container positions
-  containerDimensions: DimensionsPx;
-  containerBounds: Bounds;
-  draggableDimensions: DimensionsPx;
+  containerDimensions: IDimensions;
+  containerBounds: IBounds;
+  draggableDimensions: IDimensions;
   draggableLeftRatio: number;
   draggableTopRatio: number;
 
   // Draggable element
   draggable: HTMLElement;
   handle: HTMLElement;
-
-  // Resize
-  resizeHandle: HTMLElement;
 
   constructor() { }
 
@@ -54,56 +51,30 @@ export class MoveItService {
     };
   }
 
-  checkBounds(leftPos: number, topPos: number, columnWidth: number): Partial<DraggableMovingPosition> {
+  checkBounds(leftPos: number, topPos: number, columnWidth: number): IPosition {
     let newLeftPos = Math.round(leftPos / columnWidth) * columnWidth;
     let newTopPos = Math.round(topPos / columnWidth) * columnWidth;
-    let leftEdge = false;
-    let rightEdge = false;
-    let topEdge = false;
-    let bottomEdge = false;
 
     if (newLeftPos < this.containerBounds.boundLeft) {
       newLeftPos = this.containerBounds.boundLeft;
-      leftEdge = true;
     }
     if (newLeftPos > this.containerBounds.boundRight) {
       newLeftPos = this.containerBounds.boundRight;
-      rightEdge = true;
     }
     if (newTopPos < this.containerBounds.boundTop) {
       newTopPos = this.containerBounds.boundTop;
-      topEdge = true;
     }
     if (newTopPos > this.containerBounds.boundBottom) {
       newTopPos = this.containerBounds.boundBottom;
-      bottomEdge = true;
     }
 
     return {
-      offsetLeft: newLeftPos,
-      offsetTop: newTopPos,
-      leftEdge: leftEdge,
-      rightEdge: rightEdge,
-      topEdge: topEdge,
-      bottomEdge: bottomEdge
+      x: newLeftPos,
+      y: newTopPos,
     };
   }
 
-  clearSelection(): void {
-    if (window.getSelection) {
-      window.getSelection().removeAllRanges();
-    }
-  }
-
-  getOffsetX() {
-    return this.draggable.style.transform !== '' ? Number(this.draggable.style.transform.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[0]) : 0;
-  }
-
-  getOffsetY() {
-    return this.draggable.style.transform !== '' ? Number(this.draggable.style.transform.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[1]) : 0;
-  }
-
-  checkResizeBounds(x: number, y: number, columnWidth: number, minWidth: number, minHeight: number): ResizableMovingDimensions {
+  checkResizeBounds(x: number, y: number, columnWidth: number, minWidth: number, minHeight: number): IPosition {
     const offsetX = this.getOffsetX();
     const offsetY = this.getOffsetY();
     let newX = Math.round((x - offsetX) / columnWidth ) * columnWidth;
@@ -131,6 +102,18 @@ export class MoveItService {
     };
   }
 
+  clearSelection(): void {
+    if (window.getSelection) {
+      window.getSelection().removeAllRanges();
+    }
+  }
 
+  getOffsetX() {
+    return this.draggable.style.transform !== '' ? Number(this.draggable.style.transform.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[0]) : 0;
+  }
+
+  getOffsetY() {
+    return this.draggable.style.transform !== '' ? Number(this.draggable.style.transform.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g)[1]) : 0;
+  }
 
 }

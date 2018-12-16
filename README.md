@@ -77,7 +77,7 @@ Use `ngSizeit` directive to make the DOM element resizable.
     | Output | $event | Description |
     | ------ | ------ | ----------- |
     | mDragStart | { item: HTMLElement, initLeft: number, initTop: number, offsetLeft: number, offsetTop: number } | Emitted when start dragging |
-    | mDragMove | { item: HTMLElement, initLeft: number, initTop: number, offsetLeft: number, offsetTop: number, leftEdge: boolean, rightEdge: boolean, topEdge: boolean, bottomEdge: boolean } | Emitted when dragging |
+    | mDragMove | { item: HTMLElement, initLeft: number, initTop: number, offsetLeft: number, offsetTop: number } | Emitted when dragging |
     | mDragStop | { item: HTMLElement, initLeft: number, initTop: number, offsetLeft: number, offsetTop: number } | Emitted when stop dragging |
 
     Simple example:

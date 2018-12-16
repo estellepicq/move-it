@@ -1,8 +1,8 @@
 import { Directive, ElementRef, Input, Output, EventEmitter, OnDestroy, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
 import { Observable, fromEvent, Subscription, merge } from 'rxjs';
 import { map, takeUntil, mergeMap, filter, tap } from 'rxjs/operators';
-import { DraggablePosition, DraggableMovingPosition, MousePosition } from './move-it-types';
 import { MoveItService } from './move-it.service';
+import { IDraggable, IPosition } from './move-it-types';
 
 @Directive({
   selector: '[ngMoveit]',
@@ -16,9 +16,9 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
   @Input() dashboardDimensionsChanged: number;
 
   // Emitted events
-  @Output() mDragStart: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
-  @Output() mDragMove: EventEmitter<DraggableMovingPosition> = new EventEmitter<DraggableMovingPosition>();
-  @Output() mDragStop: EventEmitter<DraggablePosition> = new EventEmitter<DraggablePosition>();
+  @Output() mDragStart: EventEmitter<IDraggable> = new EventEmitter<IDraggable>();
+  @Output() mDragMove: EventEmitter<IDraggable> = new EventEmitter<IDraggable>();
+  @Output() mDragStop: EventEmitter<IDraggable> = new EventEmitter<IDraggable>();
 
   // Event observables
   mousedown$: Observable<MouseEvent>;
@@ -31,7 +31,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
   start$: Observable<MouseEvent | TouchEvent>;
   move$: Observable<MouseEvent | TouchEvent>;
   stop$: Observable<MouseEvent | TouchEvent>;
-  drag$: Observable<MousePosition>;
+  drag$: Observable<IPosition>;
   dragSub: Subscription;
 
   // Window size
@@ -67,7 +67,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     this.mousedown$ = fromEvent(this.moveitService.handle, 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
-    this.touchstart$ = fromEvent(this.moveitService.handle, 'touchstart') as Observable<TouchEvent>;
+    this.touchstart$ = fromEvent(this.moveitService.handle, 'touchstart', { passive: true }) as Observable<TouchEvent>;
     this.touchmove$ = fromEvent(document, 'touchmove') as Observable<TouchEvent>;
     this.touchend$ = fromEvent(document, 'touchend') as Observable<TouchEvent>;
     this.touchcancel$ = fromEvent(document, 'touchcancel') as Observable<TouchEvent>;
@@ -80,7 +80,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
 
     // Listen to mousedrag observable
     this.dragSub = this.drag$.subscribe(mousePos => {
-      this.move(mousePos.left, mousePos.top);
+      this.move(mousePos.x, mousePos.y);
     });
 
     // Listen to window resize observable
@@ -103,27 +103,27 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     this.windowResizeSub.unsubscribe();
   }
 
-  initDragObservable(): Observable<MousePosition> {
+  initDragObservable(): Observable<IPosition> {
     // START LISTENER
     return this.start$.pipe(
       // Only from left button or any touch event
-      filter(mdEvent => (mdEvent instanceof MouseEvent
+      filter(mdEvent => ((mdEvent instanceof MouseEvent
         && mdEvent.button === 0 // left click
         && (this.draggableFrom // draggableFrom provided
         && (mdEvent.target as Element).classList.contains(this.draggableFrom) // only handle (and not handle children)
         || (this.draggableFrom === undefined && (mdEvent.target as Element).className !== 'resize-handle')) // exclude resize-handle
-        // || mdEvent instanceof TouchEvent
+        || mdEvent instanceof TouchEvent)
         )
       ),
       mergeMap(mdEvent => {
-        const mdPos: MousePosition = this.onMouseDown(mdEvent);
+        const mdPos: IPosition = this.onMouseDown(mdEvent);
         // MOVE LISTENER
         return this.move$.pipe(
           map(mmEvent => {
-            const mmPos: MousePosition = this.onMouseMove(mmEvent);
+            const mmPos: IPosition = this.onMouseMove(mmEvent);
             return {
-              left: mmPos.left - mdPos.left,
-              top: mmPos.top - mdPos.top,
+              x: mmPos.x - mdPos.x,
+              y: mmPos.y - mdPos.y,
             };
           }),
           // STOP LISTENER
@@ -135,52 +135,45 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     );
   }
 
-  onMouseDown(mdEvent: MouseEvent | TouchEvent): MousePosition {
+  onMouseDown(mdEvent: MouseEvent | TouchEvent): IPosition {
     // Disable native behavior of some elements inside the draggable element (ex: images)
     this.moveitService.draggable.style.pointerEvents = 'none';
-    // Add style to moving element
-    this.moveitService.draggable.classList.add('moving');
     // Special class to disable text hightlighting
     document.body.classList.add('no-select', 'dragging');
-    // Disable autoscroll of touch event
-    // if (mdEvent instanceof TouchEvent) { // to fix: FF does not handle TouchEvent
-    //   mdEvent.preventDefault();
-    // }
     // Emit draggable start position
-    const startPos: DraggablePosition = {
+    const startPos: IDraggable = {
       item: this.moveitService.draggable,
-      initLeft: this.moveitService.draggableDimensions.left,
-      initTop: this.moveitService.draggableDimensions.top,
-      offsetLeft: this.moveitService.getOffsetX(),
-      offsetTop: this.moveitService.getOffsetY()
+      initX: this.moveitService.draggableDimensions.left,
+      initY: this.moveitService.draggableDimensions.top,
+      offsetX: this.moveitService.getOffsetX(),
+      offsetY: this.moveitService.getOffsetY()
     };
     this.mDragStart.emit(startPos);
     // Get pointer start position and return it
-    const mdClientX = mdEvent instanceof MouseEvent ? mdEvent.clientX : mdEvent.touches[0].clientX;
-    const mdClientY = mdEvent instanceof MouseEvent ? mdEvent.clientY : mdEvent.touches[0].clientY;
-    const startX = mdClientX - startPos.offsetLeft;
-    const startY = mdClientY - startPos.offsetTop + this.bounds.scrollTop;
+    const mdX = mdEvent instanceof MouseEvent ? mdEvent.pageX : mdEvent.touches[0].pageX;
+    const mdY = mdEvent instanceof MouseEvent ? mdEvent.pageY : mdEvent.touches[0].pageY;
+    const startX = mdX - startPos.offsetX;
+    const startY = mdY - startPos.offsetY + this.bounds.scrollTop;
     return {
-      left: startX,
-      top: startY
+      x: startX,
+      y: startY
     };
   }
 
-  onMouseMove(mmEvent: MouseEvent | TouchEvent) {
+  onMouseMove(mmEvent: MouseEvent | TouchEvent): IPosition {
     // Get mouse / touch position
-    const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
-    const mmClientY = mmEvent instanceof MouseEvent ? mmEvent.clientY : mmEvent.touches[0].clientY;
+    const mmX = mmEvent instanceof MouseEvent ? mmEvent.pageX : mmEvent.touches[0].pageX;
+    const mmY = mmEvent instanceof MouseEvent ? mmEvent.pageY : mmEvent.touches[0].pageY;
     // Return position
     return {
-      left: mmClientX,
-      top: mmClientY + this.bounds.scrollTop,
+      x: mmX,
+      y: mmY + this.bounds.scrollTop,
     };
   }
 
   onMouseUp(): void {
     // Remove styles
     this.moveitService.draggable.style.pointerEvents = 'unset';
-    this.moveitService.draggable.classList.remove('moving');
     document.body.classList.remove('no-select', 'dragging');
     this.moveitService.clearSelection();
 
@@ -189,38 +182,34 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     const shadowOffsetY = shadowOffset ? parseFloat(shadowOffset[5]) : 0;
     this.moveitService.draggable.style.filter = 'unset';
     // Emit position
-    const finalPos: DraggablePosition = {
+    const finalPos: IDraggable = {
       item: this.moveitService.draggable,
-      initLeft: this.moveitService.draggableDimensions.left,
-      initTop: this.moveitService.draggableDimensions.top,
-      offsetLeft: this.moveitService.getOffsetX() + shadowOffsetX,
-      offsetTop: this.moveitService.getOffsetY() + shadowOffsetY
+      initX: this.moveitService.draggableDimensions.left,
+      initY: this.moveitService.draggableDimensions.top,
+      offsetX: this.moveitService.getOffsetX() + shadowOffsetX,
+      offsetY: this.moveitService.getOffsetY() + shadowOffsetY
     };
 
-    const translateX = 'translateX(' + finalPos.offsetLeft + 'px) ';
-    const translateY = 'translateY(' + finalPos.offsetTop + 'px)';
+    const translateX = 'translateX(' + finalPos.offsetX + 'px) ';
+    const translateY = 'translateY(' + finalPos.offsetY + 'px)';
     this.moveitService.draggable.style.transform = translateX + translateY;
     this.mDragStop.emit(finalPos);
 
     // This is for window resize
-    this.moveitService.draggableLeftRatio = finalPos.offsetLeft / this.moveitService.containerDimensions.width;
-    this.moveitService.draggableTopRatio = finalPos.offsetTop / this.moveitService.containerDimensions.height;
+    this.moveitService.draggableLeftRatio = finalPos.offsetX / this.moveitService.containerDimensions.width;
+    this.moveitService.draggableTopRatio = finalPos.offsetY / this.moveitService.containerDimensions.height;
   }
 
   move(leftPos: number, topPos: number): void {
     // Check bounds
     const checkedPos = this.moveitService.checkBounds(leftPos, topPos, this.columnWidth);
 
-    const movingPos: DraggableMovingPosition = {
+    const movingPos: IDraggable = {
       item: this.moveitService.draggable,
-      initLeft: this.moveitService.draggableDimensions.left,
-      initTop: this.moveitService.draggableDimensions.top,
-      offsetLeft: checkedPos.offsetLeft,
-      offsetTop: checkedPos.offsetTop,
-      leftEdge: checkedPos.leftEdge,
-      rightEdge: checkedPos.rightEdge,
-      topEdge: checkedPos.topEdge,
-      bottomEdge: checkedPos.bottomEdge
+      initX: this.moveitService.draggableDimensions.left,
+      initY: this.moveitService.draggableDimensions.top,
+      offsetX: checkedPos.x,
+      offsetY: checkedPos.y
     };
 
     // Move draggable element
@@ -229,7 +218,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     this.moveitService.draggable.style.transform = translateX + translateY;
 
     // tslint:disable-next-line:max-line-length
-    const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' + (checkedPos.offsetLeft - leftPos) + 'px ' + (checkedPos.offsetTop - topPos) + 'px 0px)';
+    const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' + (checkedPos.x - leftPos) + 'px ' + (checkedPos.y - topPos) + 'px 0px)';
     this.moveitService.draggable.style.filter = shadowFilter;
 
     // Emit position
@@ -259,7 +248,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
       this.start$ = merge(this.mousedown$, this.touchstart$);
       this.drag$ = this.initDragObservable();
       this.dragSub = this.drag$.subscribe(mousePos => {
-        this.move(mousePos.left, mousePos.top);
+        this.move(mousePos.x, mousePos.y);
       });
     }
   }

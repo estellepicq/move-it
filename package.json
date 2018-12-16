@@ -4,9 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve demo --port 4201",
-    "build": "ng build --prod move-it",
-    "build:watch": "ng build --watch move-it",
-    "build:demo": "ng build --prod demo",
+    "build:js": "ng build --prod move-it",
+    "build:css": "node scripts/build-css",
+    "build": "ng build --prod move-it && node scripts/build-css",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"
