@@ -23,11 +23,34 @@ Add `ngMoveit` directive to DOM elements to enable Drag & Drop.
 
 # Installation
 
-`npm install move-it`
+1. `npm install @epicq/move-it`
+
+2. Import `MoveItModule` in your app module (or any other angular module):
+  ```typescript
+  import { MoveItModule } from '@epicq/move-it';
+
+  @NgModule({
+    imports: [
+      ...,
+      MoveItModule
+    ],
+    ...
+  })
+  export class AppModule { }
+  ```
+
+  3. Import `move-it.css` in your project. If you use `angular-cli`, you can add this in `angular.json`:
+
+  ```diff
+  "styles": [
+      ...
+  +   "node_modules/@epicq/move-it/lib/move-it.css"
+  ]
+  ```
 
 # Draggable
 
-Use `ngMoveit` directive to make the DOM element draggable.
+  Use `ngMoveit` directive to make the DOM element draggable.
   + Simple example:
 
     ```html

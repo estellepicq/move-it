@@ -1,5 +1,5 @@
 {
-  "name": "move-it",
+  "name": "@epicq/move-it",
   "version": "0.1.0",
   "description": "Angular library for Drag & Drop & Resize",
   "keywords" :["Angular","Library", "Drag & Drop", "Resize"],
