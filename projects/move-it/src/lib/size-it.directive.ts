@@ -1,13 +1,13 @@
-import { Directive, Input, AfterViewInit, Output, EventEmitter } from '@angular/core';
+import { Directive, Input, AfterViewInit, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { MoveItService } from './move-it.service';
-import { Observable, fromEvent } from 'rxjs';
-import { mergeMap, map, takeUntil, tap } from 'rxjs/operators';
+import { Observable, fromEvent, Subscription, merge } from 'rxjs';
+import { mergeMap, map, takeUntil, tap, filter } from 'rxjs/operators';
 import { IResizable, IPosition } from './move-it-types';
 
 @Directive({
   selector: '[ngSizeit]'
 })
-export class SizeItDirective implements AfterViewInit {
+export class SizeItDirective implements AfterViewInit, OnDestroy {
 
   @Input() bounds: HTMLElement = document.body;
   @Input() columnWidth = 1; // px
@@ -18,7 +18,15 @@ export class SizeItDirective implements AfterViewInit {
   mousedown$: Observable<MouseEvent>;
   mousemove$: Observable<MouseEvent>;
   mouseup$: Observable<MouseEvent>;
+  touchstart$: Observable<TouchEvent>;
+  touchmove$: Observable<TouchEvent>;
+  touchend$: Observable<TouchEvent>;
+  touchcancel$: Observable<TouchEvent>;
+  start$: Observable<MouseEvent | TouchEvent>;
+  move$: Observable<MouseEvent | TouchEvent>;
+  stop$: Observable<MouseEvent | TouchEvent>;
   resize$: Observable<IPosition>;
+  resizeSub: Subscription;
 
   // Emitted events
   @Output() mResizeStart: EventEmitter<IResizable> = new EventEmitter<IResizable>();
@@ -35,15 +43,25 @@ export class SizeItDirective implements AfterViewInit {
     resizeHandle.setAttribute('class', 'resize-handle');
     this.moveitService.draggable.appendChild(resizeHandle);
 
+    // Add options to resize handles
+
     // Create event listeners
     this.mousedown$ = fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
+    this.touchstart$ = fromEvent(resizeHandle, 'touchstart', { passive: true }) as Observable<TouchEvent>;
+    this.touchmove$ = fromEvent(document, 'touchmove') as Observable<TouchEvent>;
+    this.touchend$ = fromEvent(document, 'touchend') as Observable<TouchEvent>;
+    this.touchcancel$ = fromEvent(document, 'touchcancel') as Observable<TouchEvent>;
+    this.start$ = merge(this.mousedown$, this.touchstart$);
+    this.move$ = merge(this.mousemove$, this.touchmove$);
+    this.stop$ = merge(this.mouseup$, this.touchend$, this.touchcancel$);
 
-    this.resize$ = this.mousedown$.pipe(
+    this.resize$ = this.start$.pipe(
+      filter(mdEvent => mdEvent instanceof MouseEvent && mdEvent.button === 0 || mdEvent instanceof TouchEvent),
       mergeMap(() => {
         const mdPos: IPosition = this.onMouseDown();
-        return this.mousemove$.pipe(
+        return this.move$.pipe(
           map(mmEvent => {
             const mmPos: IPosition = this.onMouseMove(mmEvent);
             return {
@@ -53,14 +71,14 @@ export class SizeItDirective implements AfterViewInit {
               y: mmPos.y,
             };
           }),
-          takeUntil(this.mouseup$.pipe(
+          takeUntil(this.stop$.pipe(
             tap(() => this.onMouseUp())
           ))
         );
       }),
     );
 
-    this.resize$.subscribe(pos => {
+    this.resizeSub = this.resize$.subscribe(pos => {
       this.resize(pos);
     });
 
@@ -144,6 +162,10 @@ export class SizeItDirective implements AfterViewInit {
     // Update element style
     this.moveitService.draggable.style.width = pos.x - this.moveitService.getOffsetX() + 'px';
     this.moveitService.draggable.style.height = pos.y - this.moveitService.getOffsetY() + 'px';
+  }
+
+  ngOnDestroy() {
+    this.resizeSub.unsubscribe();
   }
 
 }

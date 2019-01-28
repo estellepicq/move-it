@@ -19,11 +19,11 @@
 }
 
 .resize-handle {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  cursor: se-resize;
+  position: absolute; 
   width: 10px;
   height: 10px;
   background: #aaa;
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
 }
