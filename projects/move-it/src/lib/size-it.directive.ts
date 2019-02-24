@@ -13,6 +13,8 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   @Input() columnWidth = 1; // px
   @Input() minWidth = 1; // columns
   @Input() minHeight = 1; // columns
+  @Input() scale = 1;
+  @Input() scrollableContainer: HTMLElement = document.body;
 
   // Event observables
   mousedown$: Observable<MouseEvent>;

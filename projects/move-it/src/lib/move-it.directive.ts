@@ -14,6 +14,8 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
   @Input() bounds: HTMLElement = document.body;
   @Input() columnWidth = 1;
   @Input() dashboardDimensionsChanged: number;
+  @Input() scale = 1;
+  @Input() scrollableContainer: HTMLElement = document.body;
 
   // Emitted events
   @Output() mDragStart: EventEmitter<IDraggable> = new EventEmitter<IDraggable>();
