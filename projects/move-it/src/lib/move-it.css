@@ -18,7 +18,7 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
-.resize-handle {
+.resize-handle-se {
   position: absolute; 
   width: 10px;
   height: 10px;

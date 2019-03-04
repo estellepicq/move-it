@@ -1,7 +1,7 @@
 import { Directive, Input, AfterViewInit, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { MoveItService } from './move-it.service';
-import { Observable, fromEvent, Subscription, merge } from 'rxjs';
-import { mergeMap, map, takeUntil, tap, filter } from 'rxjs/operators';
+import { Observable, fromEvent, Subscription, merge, of } from 'rxjs';
+import { mergeMap, map, takeUntil, tap, filter, concat } from 'rxjs/operators';
 import { IResizable, IPosition } from './move-it-types';
 
 @Directive({
@@ -15,12 +15,13 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   @Input() minHeight = 1; // columns
   @Input() scale = 1;
   @Input() scrollableContainer: HTMLElement = document.body;
+  @Input() handles: string[] = ['se'];
 
   // Event observables
-  mousedown$: Observable<MouseEvent>;
+  mousedown$: Observable<MouseEvent> = of();
   mousemove$: Observable<MouseEvent>;
   mouseup$: Observable<MouseEvent>;
-  touchstart$: Observable<TouchEvent>;
+  touchstart$: Observable<TouchEvent> = of();
   touchmove$: Observable<TouchEvent>;
   touchend$: Observable<TouchEvent>;
   touchcancel$: Observable<TouchEvent>;
@@ -41,17 +42,22 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     // Create handle
-    const resizeHandle = document.createElement('div');
-    resizeHandle.setAttribute('class', 'resize-handle');
-    this.moveitService.draggable.appendChild(resizeHandle);
+    const resizeHandles = this.createHandles();
+    // const resizeHandle = document.createElement('div');
+    // resizeHandle.setAttribute('class', 'resize-handle');
+    // this.moveitService.draggable.appendChild(resizeHandle);
 
     // Add options to resize handles
 
     // Create event listeners
-    this.mousedown$ = fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>;
+    resizeHandles.forEach(resizeHandle => {
+      this.mousedown$ = merge(this.mousedown$, fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>);
+      this.touchstart$ = merge(this.touchstart$, fromEvent(resizeHandle, 'touchstart') as Observable<TouchEvent>);
+    });
+    // this.mousedown$ = fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
-    this.touchstart$ = fromEvent(resizeHandle, 'touchstart', { passive: true }) as Observable<TouchEvent>;
+    // this.touchstart$ = fromEvent(resizeHandle, 'touchstart', { passive: true }) as Observable<TouchEvent>;
     this.touchmove$ = fromEvent(document, 'touchmove') as Observable<TouchEvent>;
     this.touchend$ = fromEvent(document, 'touchend') as Observable<TouchEvent>;
     this.touchcancel$ = fromEvent(document, 'touchcancel') as Observable<TouchEvent>;
@@ -61,7 +67,8 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
 
     this.resize$ = this.start$.pipe(
       filter(mdEvent => mdEvent instanceof MouseEvent && mdEvent.button === 0 || mdEvent instanceof TouchEvent),
-      mergeMap(() => {
+      mergeMap((mdEvent) => {
+        console.log(mdEvent);
         const mdPos: IPosition = this.onMouseDown();
         return this.move$.pipe(
           map(mmEvent => {
@@ -147,7 +154,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     this.bounds.removeChild(shadowElt);
   }
 
-  resize(pos): void {
+  resize(pos: IPosition): void {
     const checkedDim = this.moveitService.checkResizeBounds(pos.x, pos.y, this.columnWidth, this.minWidth, this.minHeight);
     const movingDim: IResizable = {
       item: this.moveitService.draggable,
@@ -170,4 +177,37 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     this.resizeSub.unsubscribe();
   }
 
+  createHandles(): HTMLElement[] {
+    const handles: HTMLElement[] = [];
+    this.handles.forEach(handle => {
+      if (!handle.match(/^(se|sw|ne|nw|n|e|s|w)$/)) {
+        console.error('Invalid handle:', handle);
+        return null;
+      }
+      const resizeHandle = document.createElement('div');
+      resizeHandle.setAttribute('class', 'resize-handle-' + handle);
+      this.moveitService.draggable.appendChild(resizeHandle);
+      handles.push(resizeHandle);
+    });
+    return handles;
+  }
+
 }
+
+// if (this._direction.n) {
+//   // n, ne, nw
+//   this._currPos.y = this._origPos.y + tmpY;
+//   this._currSize.height = this._origSize.height - tmpY;
+// } else if (this._direction.s) {
+//   // s, se, sw
+//   this._currSize.height = this._origSize.height + tmpY;
+// }
+
+// if (this._direction.e) {
+//   // e, ne, se
+//   this._currSize.width = this._origSize.width + tmpX;
+// } else if (this._direction.w) {
+//   // w, nw, sw
+//   this._currSize.width = this._origSize.width - tmpX;
+//   this._currPos.x = this._origPos.x + tmpX;
+// }

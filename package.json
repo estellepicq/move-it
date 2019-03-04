@@ -30,6 +30,7 @@
     "@angular/router": "^6.0.3",
     "core-js": "^2.5.4",
     "ng-packagr": "^4.4.5",
+    "node-sass": "^4.11.0",
     "rxjs": "^6.0.0",
     "zone.js": "^0.8.26"
   },
