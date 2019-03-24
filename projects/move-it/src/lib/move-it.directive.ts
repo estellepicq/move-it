@@ -113,7 +113,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
         && mdEvent.button === 0 // left click
         && (this.draggableFrom // draggableFrom provided
         && (mdEvent.target as Element).classList.contains(this.draggableFrom) // only handle (and not handle children)
-        || (this.draggableFrom === undefined && (mdEvent.target as Element).className !== 'resize-handle')) // exclude resize-handle
+        || (this.draggableFrom === undefined && !(mdEvent.target as Element).classList.contains('resize-handle'))) // exclude resize-handle
         || mdEvent instanceof TouchEvent)
         )
       ),

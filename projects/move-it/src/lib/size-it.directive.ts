@@ -15,13 +15,15 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   @Input() minHeight = 1; // columns
   @Input() scale = 1;
   @Input() scrollableContainer: HTMLElement = document.body;
-  @Input() handles: string[] = ['se'];
+  @Input() handles: string[] = ['se', 's'];
 
   // Event observables
-  mousedown$: Observable<MouseEvent> = of();
+  mousedown1$: Observable<MouseEvent> = of();
+  mousedown2$: Observable<MouseEvent> = of();
   mousemove$: Observable<MouseEvent>;
   mouseup$: Observable<MouseEvent>;
-  touchstart$: Observable<TouchEvent> = of();
+  touchstart1$: Observable<TouchEvent> = of();
+  touchstart2$: Observable<TouchEvent> = of();
   touchmove$: Observable<TouchEvent>;
   touchend$: Observable<TouchEvent>;
   touchcancel$: Observable<TouchEvent>;
@@ -50,25 +52,26 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     // Add options to resize handles
 
     // Create event listeners
-    resizeHandles.forEach(resizeHandle => {
-      this.mousedown$ = merge(this.mousedown$, fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>);
-      this.touchstart$ = merge(this.touchstart$, fromEvent(resizeHandle, 'touchstart') as Observable<TouchEvent>);
-    });
-    // this.mousedown$ = fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>;
+    // resizeHandles.forEach((resizeHandle) => {
+    //   this.mousedown$ = fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>;
+    //   this.touchstart$ = fromEvent(resizeHandle, 'touchstart') as Observable<TouchEvent>;
+    // });
+    this.mousedown1$ = fromEvent(resizeHandles[0], 'mousedown') as Observable<MouseEvent>;
+    this.mousedown2$ = fromEvent(resizeHandles[1], 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
-    // this.touchstart$ = fromEvent(resizeHandle, 'touchstart', { passive: true }) as Observable<TouchEvent>;
+    this.touchstart1$ = fromEvent(resizeHandles[0], 'touchstart', { passive: true }) as Observable<TouchEvent>;
+    this.touchstart2$ = fromEvent(resizeHandles[1], 'touchstart', { passive: true }) as Observable<TouchEvent>;
     this.touchmove$ = fromEvent(document, 'touchmove') as Observable<TouchEvent>;
     this.touchend$ = fromEvent(document, 'touchend') as Observable<TouchEvent>;
     this.touchcancel$ = fromEvent(document, 'touchcancel') as Observable<TouchEvent>;
-    this.start$ = merge(this.mousedown$, this.touchstart$);
+    this.start$ = merge(this.mousedown1$, this.mousedown2$, this.touchstart1$, this.touchstart2$);
     this.move$ = merge(this.mousemove$, this.touchmove$);
     this.stop$ = merge(this.mouseup$, this.touchend$, this.touchcancel$);
 
     this.resize$ = this.start$.pipe(
       filter(mdEvent => mdEvent instanceof MouseEvent && mdEvent.button === 0 || mdEvent instanceof TouchEvent),
       mergeMap((mdEvent) => {
-        console.log(mdEvent);
         const mdPos: IPosition = this.onMouseDown();
         return this.move$.pipe(
           map(mmEvent => {
@@ -95,8 +98,12 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
 
   onMouseDown(): IPosition {
     document.body.classList.add('no-select', 'resizing');
-    const width = parseInt(this.moveitService.draggable.style.width, 10);
-    const height = parseInt(this.moveitService.draggable.style.height, 10);
+    const width = this.moveitService.draggable.style.width !== '' ?
+      parseInt(this.moveitService.draggable.style.width, 10) :
+      this.moveitService.draggableDimensions.width;
+    const height = this.moveitService.draggable.style.width !== '' ?
+      parseInt(this.moveitService.draggable.style.height, 10) :
+      this.moveitService.draggableDimensions.height;
 
     // Shadow div
     const shadowElt = document.createElement('div');
@@ -185,7 +192,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
         return null;
       }
       const resizeHandle = document.createElement('div');
-      resizeHandle.setAttribute('class', 'resize-handle-' + handle);
+      resizeHandle.setAttribute('class', 'resize-handle resize-handle-' + handle);
       this.moveitService.draggable.appendChild(resizeHandle);
       handles.push(resizeHandle);
     });
