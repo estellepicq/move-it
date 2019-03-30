@@ -18,12 +18,29 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
-.resize-handle-se {
+.resize-handle {
   position: absolute; 
   width: 10px;
   height: 10px;
   background: #aaa;
+}
+
+.resize-handle-se {
   bottom: 0;
   right: 0;
   cursor: nwse-resize;
+}
+
+.resize-handle-s {
+  bottom: 0;
+  right: 50%;
+  transform: translateX(50%);
+  cursor: ns-resize;
+}
+
+.resize-handle-sw {
+  bottom: 0;
+  left: 0;
+  transform: translateX(50%);
+  cursor: nesw-resize;
 }

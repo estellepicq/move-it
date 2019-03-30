@@ -3,6 +3,7 @@ export interface IPosition {
   y?: number;
   w?: number;
   h?: number;
+  handle?: string;
 }
 
 export interface IDimensions {

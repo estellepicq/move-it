@@ -1,6 +1,6 @@
 import { Directive, Input, AfterViewInit, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { MoveItService } from './move-it.service';
-import { Observable, fromEvent, Subscription, merge, of } from 'rxjs';
+import { Observable, fromEvent, Subscription, merge, of, Subject } from 'rxjs';
 import { mergeMap, map, takeUntil, tap, filter, concat } from 'rxjs/operators';
 import { IResizable, IPosition } from './move-it-types';
 
@@ -18,20 +18,19 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   @Input() handles: string[] = ['se', 's'];
 
   // Event observables
-  mousedown1$: Observable<MouseEvent> = of();
-  mousedown2$: Observable<MouseEvent> = of();
+  // mousedown$: Observable<MouseEvent> = of();
   mousemove$: Observable<MouseEvent>;
   mouseup$: Observable<MouseEvent>;
-  touchstart1$: Observable<TouchEvent> = of();
-  touchstart2$: Observable<TouchEvent> = of();
+  // touchstart$: Observable<TouchEvent> = of();
   touchmove$: Observable<TouchEvent>;
   touchend$: Observable<TouchEvent>;
   touchcancel$: Observable<TouchEvent>;
-  start$: Observable<MouseEvent | TouchEvent>;
+  // start$: Observable<MouseEvent | TouchEvent>;
   move$: Observable<MouseEvent | TouchEvent>;
   stop$: Observable<MouseEvent | TouchEvent>;
   resize$: Observable<IPosition>;
   resizeSub: Subscription;
+  startSubject$ = new Subject<{event: MouseEvent|TouchEvent, el: HTMLElement}>();
 
   // Emitted events
   @Output() mResizeStart: EventEmitter<IResizable> = new EventEmitter<IResizable>();
@@ -52,26 +51,26 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     // Add options to resize handles
 
     // Create event listeners
-    // resizeHandles.forEach((resizeHandle) => {
-    //   this.mousedown$ = fromEvent(resizeHandle, 'mousedown') as Observable<MouseEvent>;
-    //   this.touchstart$ = fromEvent(resizeHandle, 'touchstart') as Observable<TouchEvent>;
-    // });
-    this.mousedown1$ = fromEvent(resizeHandles[0], 'mousedown') as Observable<MouseEvent>;
-    this.mousedown2$ = fromEvent(resizeHandles[1], 'mousedown') as Observable<MouseEvent>;
+    resizeHandles.forEach((resizeHandle) => {
+      resizeHandle.addEventListener('mousedown', (event) => this.startSubject$.next({event, el: resizeHandle}));
+      resizeHandle.addEventListener('touchstart', (event) => this.startSubject$.next({event, el: resizeHandle}), {passive: true});
+    });
+
+    // this.mousedown$ = fromEvent(resizeHandles[0], 'mousedown') as Observable<MouseEvent>;
     this.mousemove$ = fromEvent(document, 'mousemove') as Observable<MouseEvent>;
     this.mouseup$ = fromEvent(document, 'mouseup') as Observable<MouseEvent>;
-    this.touchstart1$ = fromEvent(resizeHandles[0], 'touchstart', { passive: true }) as Observable<TouchEvent>;
-    this.touchstart2$ = fromEvent(resizeHandles[1], 'touchstart', { passive: true }) as Observable<TouchEvent>;
+    // this.touchstart$ = fromEvent(resizeHandles[0], 'touchstart', { passive: true }) as Observable<TouchEvent>;
     this.touchmove$ = fromEvent(document, 'touchmove') as Observable<TouchEvent>;
     this.touchend$ = fromEvent(document, 'touchend') as Observable<TouchEvent>;
     this.touchcancel$ = fromEvent(document, 'touchcancel') as Observable<TouchEvent>;
-    this.start$ = merge(this.mousedown1$, this.mousedown2$, this.touchstart1$, this.touchstart2$);
+    // this.start$ = merge(this.mousedown$, this.touchstart$);
     this.move$ = merge(this.mousemove$, this.touchmove$);
     this.stop$ = merge(this.mouseup$, this.touchend$, this.touchcancel$);
 
-    this.resize$ = this.start$.pipe(
-      filter(mdEvent => mdEvent instanceof MouseEvent && mdEvent.button === 0 || mdEvent instanceof TouchEvent),
-      mergeMap((mdEvent) => {
+    this.resize$ = this.startSubject$.pipe(
+      // tap((res) => console.log(res)),
+      filter(res => res.event instanceof MouseEvent && res.event.button === 0 || res.event instanceof TouchEvent),
+      mergeMap((res) => {
         const mdPos: IPosition = this.onMouseDown();
         return this.move$.pipe(
           map(mmEvent => {
@@ -81,6 +80,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
               h: mdPos.h,
               x: mmPos.x,
               y: mmPos.y,
+              handle: res.el.id
             };
           }),
           takeUntil(this.stop$.pipe(
@@ -162,7 +162,20 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   }
 
   resize(pos: IPosition): void {
-    const checkedDim = this.moveitService.checkResizeBounds(pos.x, pos.y, this.columnWidth, this.minWidth, this.minHeight);
+    console.log(pos);
+    let x = pos.x;
+    let y = pos.y;
+    switch (pos.handle) {
+      case 'resize-handle-se':
+        // nothing to do
+        break;
+      case 'resize-handle-s':
+        x = pos.w;
+        break;
+      case 'resize-handle-sw':
+        break;
+    }
+    const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight);
     const movingDim: IResizable = {
       item: this.moveitService.draggable,
       width: checkedDim.x,
@@ -176,8 +189,8 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     shadowElt.style.height = movingDim.height + 'px';
 
     // Update element style
-    this.moveitService.draggable.style.width = pos.x - this.moveitService.getOffsetX() + 'px';
-    this.moveitService.draggable.style.height = pos.y - this.moveitService.getOffsetY() + 'px';
+    this.moveitService.draggable.style.width = x - this.moveitService.getOffsetX() + 'px';
+    this.moveitService.draggable.style.height = y - this.moveitService.getOffsetY() + 'px';
   }
 
   ngOnDestroy() {
@@ -192,6 +205,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
         return null;
       }
       const resizeHandle = document.createElement('div');
+      resizeHandle.setAttribute('id', 'resize-handle-' + handle);
       resizeHandle.setAttribute('class', 'resize-handle resize-handle-' + handle);
       this.moveitService.draggable.appendChild(resizeHandle);
       handles.push(resizeHandle);
