@@ -68,10 +68,9 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     this.stop$ = merge(this.mouseup$, this.touchend$, this.touchcancel$);
 
     this.resize$ = this.startSubject$.pipe(
-      // tap((res) => console.log(res)),
       filter(res => res.event instanceof MouseEvent && res.event.button === 0 || res.event instanceof TouchEvent),
       mergeMap((res) => {
-        const mdPos: IPosition = this.onMouseDown();
+        const mdPos: IPosition = this.onMouseDown(res.event);
         return this.move$.pipe(
           map(mmEvent => {
             const mmPos: IPosition = this.onMouseMove(mmEvent);
@@ -96,7 +95,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
 
   }
 
-  onMouseDown(): IPosition {
+  onMouseDown(mdEvent: MouseEvent | TouchEvent): IPosition {
     document.body.classList.add('no-select', 'resizing');
     const width = this.moveitService.draggable.style.width !== '' ?
       parseInt(this.moveitService.draggable.style.width, 10) :
@@ -120,7 +119,15 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     };
     this.mResizeStart.emit(startDim);
 
+    // Get pointer start position and return it
+    const mdX = mdEvent instanceof MouseEvent ? mdEvent.pageX : mdEvent.touches[0].pageX;
+    const mdY = mdEvent instanceof MouseEvent ? mdEvent.pageY : mdEvent.touches[0].pageY;
+    const startX = this.moveitService.getOffsetX();
+    const startY = this.moveitService.getOffsetY();
+
     return {
+      x: startX,
+      y: startY,
       w: width,
       h: height
     };
@@ -179,8 +186,8 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
         const movingPos = this.moveitService.move(x, y, this.columnWidth);
         offsetX = movingPos.offsetX;
         offsetY = movingPos.offsetY;
-        x = pos.w + offsetX; // fix
-        y = pos.h + offsetY;
+        x = pos.w;
+        y = pos.h;
         break;
     }
     const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight);
