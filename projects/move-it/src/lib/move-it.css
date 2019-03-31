@@ -25,6 +25,25 @@
   background: #aaa;
 }
 
+.resize-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.resize-handle-n {
+  top: 0;
+  right: 50%;
+  transform: translateX(50%);
+  cursor: ns-resize;
+}
+
+.resize-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
 .resize-handle-se {
   bottom: 0;
   right: 0;
@@ -41,6 +60,19 @@
 .resize-handle-sw {
   bottom: 0;
   left: 0;
-  transform: translateX(50%);
   cursor: nesw-resize;
+}
+
+.resize-handle-e {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.resize-handle-w {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  cursor: ew-resize;
 }

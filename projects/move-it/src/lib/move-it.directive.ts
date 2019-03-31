@@ -203,25 +203,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   move(leftPos: number, topPos: number): void {
-    // Check bounds
-    const checkedPos = this.moveitService.checkBounds(leftPos, topPos, this.columnWidth);
-
-    const movingPos: IDraggable = {
-      item: this.moveitService.draggable,
-      initX: this.moveitService.draggableDimensions.left,
-      initY: this.moveitService.draggableDimensions.top,
-      offsetX: checkedPos.x,
-      offsetY: checkedPos.y
-    };
-
-    // Move draggable element
-    const translateX = 'translateX(' + leftPos + 'px) ';
-    const translateY = 'translateY(' + topPos + 'px)';
-    this.moveitService.draggable.style.transform = translateX + translateY;
-
-    // tslint:disable-next-line:max-line-length
-    const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' + (checkedPos.x - leftPos) + 'px ' + (checkedPos.y - topPos) + 'px 0px)';
-    this.moveitService.draggable.style.filter = shadowFilter;
+    const movingPos: IDraggable = this.moveitService.move(leftPos, topPos, this.columnWidth);
 
     // Emit position
     this.mDragMove.emit(movingPos);

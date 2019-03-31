@@ -15,7 +15,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   @Input() minHeight = 1; // columns
   @Input() scale = 1;
   @Input() scrollableContainer: HTMLElement = document.body;
-  @Input() handles: string[] = ['se', 's'];
+  @Input() handles: string[] = ['se', 's', 'sw', 'e', 'w', 'ne', 'n', 'nw'];
 
   // Event observables
   // mousedown$: Observable<MouseEvent> = of();
@@ -162,9 +162,10 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   }
 
   resize(pos: IPosition): void {
-    console.log(pos);
     let x = pos.x;
     let y = pos.y;
+    let offsetX = 0;
+    let offsetY = 0;
     switch (pos.handle) {
       case 'resize-handle-se':
         // nothing to do
@@ -173,6 +174,13 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
         x = pos.w;
         break;
       case 'resize-handle-sw':
+        break;
+      case 'resize-handle-nw':
+        const movingPos = this.moveitService.move(x, y, this.columnWidth);
+        offsetX = movingPos.offsetX;
+        offsetY = movingPos.offsetY;
+        x = pos.w + offsetX; // fix
+        y = pos.h + offsetY;
         break;
     }
     const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight);
