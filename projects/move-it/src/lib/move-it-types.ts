@@ -4,6 +4,8 @@ export interface IPosition {
   w?: number;
   h?: number;
   handle?: string;
+  offsetX?: number;
+  offsetY?: number;
 }
 
 export interface IDimensions {

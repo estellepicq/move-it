@@ -105,6 +105,8 @@ export class MoveItService {
     let newX = Math.round((x - offsetX) / columnWidth ) * columnWidth;
     let newY = Math.round((y - offsetY) / columnWidth ) * columnWidth;
 
+    console.log(newX, offsetX, this.draggableDimensions.left); // add a condition to fix offset if outside the bounds
+
     if (newX < minWidth * columnWidth) {
       newX = minWidth * columnWidth;
     }

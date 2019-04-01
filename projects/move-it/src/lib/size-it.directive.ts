@@ -70,7 +70,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     this.resize$ = this.startSubject$.pipe(
       filter(res => res.event instanceof MouseEvent && res.event.button === 0 || res.event instanceof TouchEvent),
       mergeMap((res) => {
-        const mdPos: IPosition = this.onMouseDown(res.event);
+        const mdPos: IPosition = this.onMouseDown();
         return this.move$.pipe(
           map(mmEvent => {
             const mmPos: IPosition = this.onMouseMove(mmEvent);
@@ -79,7 +79,9 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
               h: mdPos.h,
               x: mmPos.x,
               y: mmPos.y,
-              handle: res.el.id
+              handle: res.el.id,
+              offsetX: mdPos.x,
+              offsetY: mdPos.y,
             };
           }),
           takeUntil(this.stop$.pipe(
@@ -95,7 +97,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
 
   }
 
-  onMouseDown(mdEvent: MouseEvent | TouchEvent): IPosition {
+  onMouseDown(): IPosition {
     document.body.classList.add('no-select', 'resizing');
     const width = this.moveitService.draggable.style.width !== '' ?
       parseInt(this.moveitService.draggable.style.width, 10) :
@@ -120,14 +122,12 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     this.mResizeStart.emit(startDim);
 
     // Get pointer start position and return it
-    const mdX = mdEvent instanceof MouseEvent ? mdEvent.pageX : mdEvent.touches[0].pageX;
-    const mdY = mdEvent instanceof MouseEvent ? mdEvent.pageY : mdEvent.touches[0].pageY;
-    const startX = this.moveitService.getOffsetX();
-    const startY = this.moveitService.getOffsetY();
+    const offsetX = this.moveitService.getOffsetX();
+    const offsetY = this.moveitService.getOffsetY();
 
     return {
-      x: startX,
-      y: startY,
+      x: offsetX,
+      y: offsetY,
       w: width,
       h: height
     };
@@ -171,23 +171,38 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   resize(pos: IPosition): void {
     let x = pos.x;
     let y = pos.y;
-    let offsetX = 0;
-    let offsetY = 0;
     switch (pos.handle) {
       case 'resize-handle-se':
-        // nothing to do
+        // default case
         break;
       case 'resize-handle-s':
-        x = pos.w;
+        x = pos.w + pos.offsetX; // unvariable width
         break;
       case 'resize-handle-sw':
+        this.moveitService.move(x, pos.offsetY, this.columnWidth); // y coordinate does not change, x does
+        x = pos.w + pos.offsetX; // width will be calculated making the difference between x and offsetX
+        break;
+      case 'resize-handle-ne':
+        this.moveitService.move(pos.offsetX, y, this.columnWidth); // x coordinate does not change, y does
+        y = pos.h + pos.offsetY; // height will be calculated making the difference between y and offsetY
+        break;
+      case 'resize-handle-n':
+        this.moveitService.move(pos.offsetX, y, this.columnWidth);
+        x = pos.w + pos.offsetX; // unvariable width
+        y = pos.h + pos.offsetY; // height will be calculated making the difference between y and offsetY
         break;
       case 'resize-handle-nw':
-        const movingPos = this.moveitService.move(x, y, this.columnWidth);
-        offsetX = movingPos.offsetX;
-        offsetY = movingPos.offsetY;
-        x = pos.w;
-        y = pos.h;
+        this.moveitService.move(x, y, this.columnWidth); // both x and y coordinates change
+        x = pos.w + pos.offsetX;
+        y = pos.h + pos.offsetY;
+        break;
+      case 'resize-handle-e':
+        this.moveitService.move(x, pos.offsetY, this.columnWidth); // y coordinate does not change, x does
+        x = pos.w + pos.offsetX; // width will be calculated making the difference between x and offsetX
+        y = pos.h + pos.offsetY; // unvariable height
+        break;
+      case 'resize-handle-w':
+        y = pos.h + pos.offsetY; // unvariable height
         break;
     }
     const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight);
@@ -203,7 +218,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     shadowElt.style.width = movingDim.width + 'px';
     shadowElt.style.height = movingDim.height + 'px';
 
-    // Update element style
+    // Update element style: if element has an offset, remove it so that the element can grow
     this.moveitService.draggable.style.width = x - this.moveitService.getOffsetX() + 'px';
     this.moveitService.draggable.style.height = y - this.moveitService.getOffsetY() + 'px';
   }
