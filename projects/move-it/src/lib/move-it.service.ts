@@ -99,13 +99,12 @@ export class MoveItService {
     };
   }
 
-  checkResizeBounds(x: number, y: number, columnWidth: number, minWidth: number, minHeight: number): IPosition {
+  checkResizeBounds(x: number, y: number,
+    columnWidth: number, minWidth: number, minHeight: number, testBounds): IPosition {
     const offsetX = this.getOffsetX();
     const offsetY = this.getOffsetY();
-    let newX = Math.round((x - offsetX) / columnWidth ) * columnWidth;
-    let newY = Math.round((y - offsetY) / columnWidth ) * columnWidth;
-
-    console.log(newX, offsetX, this.draggableDimensions.left); // add a condition to fix offset if outside the bounds
+    let newX = Math.round((x - offsetX) / columnWidth) * columnWidth;
+    let newY = Math.round((y - offsetY) / columnWidth) * columnWidth;
 
     if (newX < minWidth * columnWidth) {
       newX = minWidth * columnWidth;
@@ -121,6 +120,12 @@ export class MoveItService {
 
     if (newY > this.containerDimensions.height - offsetY) {
       newY = this.containerDimensions.height - offsetY;
+    }
+
+    console.log({newX, offsetX});
+    if (-testBounds.x === this.draggableDimensions.left) {
+      console.log('must stop now');
+      // set newX to offsetX + width
     }
 
     return {

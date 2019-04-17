@@ -205,7 +205,9 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
         y = pos.h + pos.offsetY; // unvariable height
         break;
     }
-    const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight);
+    const testBounds = this.moveitService.checkBounds(this.moveitService.getOffsetX(), this.moveitService.getOffsetY(), this.columnWidth);
+    console.log(testBounds);
+    const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight, testBounds);
     const movingDim: IResizable = {
       item: this.moveitService.draggable,
       width: checkedDim.x,
