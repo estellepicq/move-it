@@ -152,10 +152,21 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     const shadowElt = this.bounds.querySelector('.resize-shadow') as HTMLElement;
     const width = parseFloat(shadowElt.style.width);
     const height = parseFloat(shadowElt.style.height);
+    // new
+    const shadowOffset = this.moveitService.draggable.style.filter.match(/[-]{0,1}[\d]*[\.]{0,1}[\d]+/g);
+    const shadowOffsetX = shadowOffset ? parseFloat(shadowOffset[4]) : 0;
+    const shadowOffsetY = shadowOffset ? parseFloat(shadowOffset[5]) : 0;
 
     // Copy width and height to element
-    this.moveitService.draggable.style.width = width + 'px';
-    this.moveitService.draggable.style.height = height + 'px';
+    this.moveitService.draggable.style.width = width - shadowOffsetX + 'px';
+    this.moveitService.draggable.style.height = height - shadowOffsetY + 'px';
+    // new
+    const newTranlateX = this.moveitService.getOffsetX() + shadowOffsetX;
+    const newTranlateY =  this.moveitService.getOffsetY() + shadowOffsetY;
+    const translateX = 'translateX(' + newTranlateX + 'px) ';
+    const translateY = 'translateY(' + newTranlateY + 'px)';
+    this.moveitService.draggable.style.transform = translateX + translateY;
+    this.moveitService.draggable.style.filter = 'unset';
 
     const finalDim: IResizable = {
       item: this.moveitService.draggable,
@@ -205,9 +216,8 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
         y = pos.h + pos.offsetY; // unvariable height
         break;
     }
-    const testBounds = this.moveitService.checkBounds(this.moveitService.getOffsetX(), this.moveitService.getOffsetY(), this.columnWidth);
-    console.log(testBounds);
-    const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight, testBounds);
+    const checkedDim = this.moveitService.checkResizeBounds(x, y, this.columnWidth, this.minWidth, this.minHeight);
+
     const movingDim: IResizable = {
       item: this.moveitService.draggable,
       width: checkedDim.x,
@@ -223,6 +233,8 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     // Update element style: if element has an offset, remove it so that the element can grow
     this.moveitService.draggable.style.width = x - this.moveitService.getOffsetX() + 'px';
     this.moveitService.draggable.style.height = y - this.moveitService.getOffsetY() + 'px';
+    // this.moveitService.draggable.style.width = x + 'px';
+    // this.moveitService.draggable.style.height = y + 'px';
   }
 
   ngOnDestroy() {
@@ -246,21 +258,3 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   }
 
 }
-
-// if (this._direction.n) {
-//   // n, ne, nw
-//   this._currPos.y = this._origPos.y + tmpY;
-//   this._currSize.height = this._origSize.height - tmpY;
-// } else if (this._direction.s) {
-//   // s, se, sw
-//   this._currSize.height = this._origSize.height + tmpY;
-// }
-
-// if (this._direction.e) {
-//   // e, ne, se
-//   this._currSize.width = this._origSize.width + tmpX;
-// } else if (this._direction.w) {
-//   // w, nw, sw
-//   this._currSize.width = this._origSize.width - tmpX;
-//   this._currPos.x = this._origPos.x + tmpX;
-// }

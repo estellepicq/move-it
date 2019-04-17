@@ -54,6 +54,7 @@ export class MoveItService {
   move(leftPos: number, topPos: number, columnWidth: number): IDraggable {
     // Check bounds
     const checkedPos = this.checkBounds(leftPos, topPos, columnWidth);
+    console.log(checkedPos);
 
     const movingPos: IDraggable = {
       item: this.draggable,
@@ -68,7 +69,6 @@ export class MoveItService {
     const translateY = 'translateY(' + topPos + 'px)';
     this.draggable.style.transform = translateX + translateY;
 
-    // tslint:disable-next-line:max-line-length
     const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' + (movingPos.offsetX - leftPos) + 'px ' +
       (movingPos.offsetY - topPos) + 'px 0px)';
     this.draggable.style.filter = shadowFilter;
@@ -99,8 +99,7 @@ export class MoveItService {
     };
   }
 
-  checkResizeBounds(x: number, y: number,
-    columnWidth: number, minWidth: number, minHeight: number, testBounds): IPosition {
+  checkResizeBounds(x: number, y: number, columnWidth: number, minWidth: number, minHeight: number): IPosition {
     const offsetX = this.getOffsetX();
     const offsetY = this.getOffsetY();
     let newX = Math.round((x - offsetX) / columnWidth) * columnWidth;
@@ -122,15 +121,9 @@ export class MoveItService {
       newY = this.containerDimensions.height - offsetY;
     }
 
-    console.log({newX, offsetX});
-    if (-testBounds.x === this.draggableDimensions.left) {
-      console.log('must stop now');
-      // set newX to offsetX + width
-    }
-
     return {
       x: newX,
-      y: newY
+      y: newY,
     };
   }
 
