@@ -15,11 +15,12 @@
 }
 
 .resize-shadow {
+  position: absolute;
   background: rgba(0, 0, 0, 0.2);
 }
 
 .resize-handle {
-  position: absolute; 
+  position: absolute;
   width: 10px;
   height: 10px;
   background: rgba(255, 255, 255, 0.3);
@@ -65,14 +66,14 @@
 
 .resize-handle-e {
   top: 50%;
-  left: -5px;
+  right: -5px;
   transform: translateY(-50%);
   cursor: ew-resize;
 }
 
 .resize-handle-w {
   top: 50%;
-  right: -5px;
+  left: -5px;
   transform: translateY(-50%);
   cursor: ew-resize;
 }

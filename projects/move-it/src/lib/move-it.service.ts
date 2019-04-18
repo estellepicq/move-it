@@ -54,7 +54,6 @@ export class MoveItService {
   move(leftPos: number, topPos: number, columnWidth: number): IDraggable {
     // Check bounds
     const checkedPos = this.checkBounds(leftPos, topPos, columnWidth);
-    console.log(checkedPos);
 
     const movingPos: IDraggable = {
       item: this.draggable,
@@ -96,34 +95,6 @@ export class MoveItService {
     return {
       x: newLeftPos,
       y: newTopPos,
-    };
-  }
-
-  checkResizeBounds(x: number, y: number, columnWidth: number, minWidth: number, minHeight: number): IPosition {
-    const offsetX = this.getOffsetX();
-    const offsetY = this.getOffsetY();
-    let newX = Math.round((x - offsetX) / columnWidth) * columnWidth;
-    let newY = Math.round((y - offsetY) / columnWidth) * columnWidth;
-
-    if (newX < minWidth * columnWidth) {
-      newX = minWidth * columnWidth;
-    }
-
-    if (newX > this.containerDimensions.width - offsetX) {
-      newX = this.containerDimensions.width - offsetX;
-    }
-
-    if (newY < minHeight * columnWidth) {
-      newY = minHeight * columnWidth;
-    }
-
-    if (newY > this.containerDimensions.height - offsetY) {
-      newY = this.containerDimensions.height - offsetY;
-    }
-
-    return {
-      x: newX,
-      y: newY,
     };
   }
 

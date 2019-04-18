@@ -34,4 +34,6 @@ export interface IResizable {
   item: HTMLElement;
   width: number;
   height: number;
+  offsetX: number;
+  offsetY: number;
 }
