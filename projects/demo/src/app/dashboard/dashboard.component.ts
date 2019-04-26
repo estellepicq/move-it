@@ -16,7 +16,7 @@ export class DashboardComponent implements OnInit {
 
   onMove(event): void {
     const positionElt = this.el.nativeElement.querySelector('#position');
-    positionElt.textContent = `top: ${event.initTop + event.offsetTop}px; left: ${event.initLeft + event.offsetLeft}px`;
+    positionElt.textContent = `top: ${event.initY + event.y}px; left: ${event.initX + event.x}px`;
   }
 
 }

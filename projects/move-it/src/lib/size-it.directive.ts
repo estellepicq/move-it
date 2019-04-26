@@ -1,8 +1,8 @@
 import { Directive, Input, AfterViewInit, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { MoveItService } from './move-it.service';
-import { Observable, fromEvent, Subscription, merge, of, Subject } from 'rxjs';
-import { mergeMap, map, takeUntil, tap, filter, concat } from 'rxjs/operators';
-import { IResizable, IPosition } from './move-it-types';
+import { Observable, fromEvent, Subscription, merge, Subject } from 'rxjs';
+import { mergeMap, map, takeUntil, tap, filter } from 'rxjs/operators';
+import { IPosition } from './move-it-types';
 
 @Directive({
   selector: '[ngSizeit]'
@@ -30,9 +30,9 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   startSubject$ = new Subject<{event: MouseEvent|TouchEvent, el: HTMLElement}>();
 
   // Emitted events
-  @Output() mResizeStart: EventEmitter<IResizable> = new EventEmitter<IResizable>();
-  @Output() mResizeMove: EventEmitter<IResizable> = new EventEmitter<IResizable>();
-  @Output() mResizeStop: EventEmitter<IResizable> = new EventEmitter<IResizable>();
+  @Output() mResizeStart: EventEmitter<IPosition> = new EventEmitter<IPosition>();
+  @Output() mResizeMove: EventEmitter<IPosition> = new EventEmitter<IPosition>();
+  @Output() mResizeStop: EventEmitter<IPosition> = new EventEmitter<IPosition>();
 
   constructor(
     private moveitService: MoveItService,
@@ -59,20 +59,32 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     this.resize$ = this.startSubject$.pipe(
       filter(res => res.event instanceof MouseEvent && res.event.button === 0 || res.event instanceof TouchEvent),
       mergeMap((res) => {
+        // Get initial position
         const mdPos: IPosition = this.onMouseDown();
+
+        // Then listen to mousemove
         return this.move$.pipe(
           map(mmEvent => {
-            const mmPos: IPosition = this.onMouseMove(mmEvent);
-            return {
+            // Get mouse position
+            const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
+            const mmClientY = mmEvent instanceof MouseEvent ? mmEvent.clientY : mmEvent.touches[0].clientY;
+            const movingX = mmClientX - this.moveitService.containerDimensions.left - this.moveitService.draggableDimensions.left;
+            const movingY = mmClientY - this.moveitService.containerDimensions.top + this.bounds.scrollTop - this.moveitService.draggableDimensions.top;
+
+            // Build pos object
+            const pos: IPosition = {
+              resizeHandle: res.el.id,
+              x: movingX,
+              y: movingY,
               w: mdPos.w,
               h: mdPos.h,
-              x: mmPos.x,
-              y: mmPos.y,
-              handle: res.el.id,
-              offsetX: mdPos.x,
-              offsetY: mdPos.y,
+              initX: mdPos.x,
+              initY: mdPos.y,
             };
+            return pos; // This observable is listened in "resizeSub"
           }),
+
+          // Stop listening on mouseup
           takeUntil(this.stop$.pipe(
             tap(() => this.onMouseUp())
           ))
@@ -87,38 +99,28 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   }
 
   onMouseDown(): IPosition {
+    // Add "no-select" and "resizing" class to body
     document.body.classList.add('no-select', 'resizing');
-    const width = this.moveitService.draggable.style.width !== '' ?
-      parseInt(this.moveitService.draggable.style.width, 10) :
-      this.moveitService.draggableDimensions.width;
-    const height = this.moveitService.draggable.style.height !== '' ?
-      parseInt(this.moveitService.draggable.style.height, 10) :
-      this.moveitService.draggableDimensions.height;
 
-    const startDim: IResizable = {
+    // Get init width and height
+    const initW = this.moveitService.draggable.style.width !== '' ? parseInt(this.moveitService.draggable.style.width, 10) : this.moveitService.draggableDimensions.width;
+    const initH = this.moveitService.draggable.style.height !== '' ? parseInt(this.moveitService.draggable.style.height, 10) : this.moveitService.draggableDimensions.height;
+
+    // Get init offsetX and offsetY
+    const initX = this.moveitService.getOffsetX();
+    const initY = this.moveitService.getOffsetY();
+
+    // Build start dimensions object
+    const startDim: IPosition = {
       item: this.moveitService.draggable,
-      width: width,
-      height: height,
-      offsetX: this.moveitService.getOffsetX(),
-      offsetY: this.moveitService.getOffsetY()
+      w: initW,
+      h: initH,
+      x: initX,
+      y: initY
     };
     this.mResizeStart.emit(startDim);
 
-    return {
-      x: startDim.offsetX,
-      y: startDim.offsetY,
-      w: startDim.width,
-      h: startDim.height
-    };
-  }
-
-  onMouseMove(mmEvent: MouseEvent | TouchEvent): IPosition {
-    const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
-    const mmClientY = mmEvent instanceof MouseEvent ? mmEvent.clientY : mmEvent.touches[0].clientY;
-    return {
-      x: mmClientX - this.moveitService.containerDimensions.left - this.moveitService.draggableDimensions.left,
-      y: mmClientY - this.moveitService.containerDimensions.top + this.bounds.scrollTop - this.moveitService.draggableDimensions.top
-    };
+    return startDim;
   }
 
   onMouseUp(): void {
@@ -127,43 +129,43 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     this.moveitService.initDraggableDimensions();
     this.moveitService.getBounds();
 
-    const finalDim: IResizable = {
+    const finalDim: IPosition = {
       item: this.moveitService.draggable,
-      width: parseInt(this.moveitService.draggable.style.width, 10),
-      height: parseInt(this.moveitService.draggable.style.height, 10),
-      offsetX: this.moveitService.getOffsetX(),
-      offsetY: this.moveitService.getOffsetY()
+      w: parseInt(this.moveitService.draggable.style.width, 10),
+      h: parseInt(this.moveitService.draggable.style.height, 10),
+      x: this.moveitService.getOffsetX(),
+      y: this.moveitService.getOffsetY()
     };
     this.mResizeStop.emit(finalDim);
   }
 
   resize(pos: IPosition) {
-    const changeTop = pos.handle === 'resize-handle-ne' || pos.handle === 'resize-handle-n' || pos.handle === 'resize-handle-nw';
-    const changeLeft = pos.handle === 'resize-handle-nw' || pos.handle === 'resize-handle-w' || pos.handle === 'resize-handle-sw';
-    const changeRight = pos.handle === 'resize-handle-e' || pos.handle === 'resize-handle-se' || pos.handle === 'resize-handle-ne';
-    const changeBottom = pos.handle === 'resize-handle-se' || pos.handle === 'resize-handle-s' || pos.handle === 'resize-handle-sw';
+    const changeTop = pos.resizeHandle === 'resize-handle-ne' || pos.resizeHandle === 'resize-handle-n' || pos.resizeHandle === 'resize-handle-nw';
+    const changeLeft = pos.resizeHandle === 'resize-handle-nw' || pos.resizeHandle === 'resize-handle-w' || pos.resizeHandle === 'resize-handle-sw';
+    const changeRight = pos.resizeHandle === 'resize-handle-e' || pos.resizeHandle === 'resize-handle-se' || pos.resizeHandle === 'resize-handle-ne';
+    const changeBottom = pos.resizeHandle === 'resize-handle-se' || pos.resizeHandle === 'resize-handle-s' || pos.resizeHandle === 'resize-handle-sw';
 
     // snap to grid
     pos.x = Math.round(pos.x / this.columnWidth) * this.columnWidth;
     pos.y = Math.round(pos.y / this.columnWidth) * this.columnWidth;
 
     // min width
-    if (changeRight && pos.x < this.minWidth + pos.offsetX) {
-      pos.x = this.minWidth + pos.offsetX;
+    if (changeRight && pos.x < this.minWidth + pos.initX) {
+      pos.x = this.minWidth + pos.initX;
     }
-    if (changeLeft && pos.x > pos.w - this.minWidth + pos.offsetX) {
-      pos.x = pos.w - this.minWidth + pos.offsetX;
+    if (changeLeft && pos.x > pos.w - this.minWidth + pos.initX) {
+      pos.x = pos.w - this.minWidth + pos.initX;
     }
     // min height
-    if (changeBottom && pos.y < this.minHeight + pos.offsetY) {
-      pos.y = this.minHeight + pos.offsetY;
+    if (changeBottom && pos.y < this.minHeight + pos.initY) {
+      pos.y = this.minHeight + pos.initY;
     }
-    if (changeTop && pos.y > pos.h - this.minHeight + pos.offsetY) {
-      pos.y = pos.h - this.minHeight + pos.offsetY;
+    if (changeTop && pos.y > pos.h - this.minHeight + pos.initY) {
+      pos.y = pos.h - this.minHeight + pos.initY;
     }
 
-    let translateX: number = changeLeft ? pos.x : pos.offsetX;
-    let translateY: number = changeTop ? pos.y : + pos.offsetY;
+    let translateX: number = changeLeft ? pos.x : pos.initX;
+    let translateY: number = changeTop ? pos.y : + pos.initY;
     // left bound
     if (this.moveitService.draggableDimensions.left + pos.x < 0) {
       pos.x = -(this.moveitService.draggableDimensions.left);
@@ -190,40 +192,40 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     let newWidth: number = pos.w;
     let newHeight: number = pos.h;
     if (changeBottom && !changeRight) {
-      newHeight = pos.y - pos.offsetY;
+      newHeight = pos.y - pos.initY;
       if (changeLeft) {
-        newWidth = pos.w - pos.x + pos.offsetX;
+        newWidth = pos.w - pos.x + pos.initX;
       }
     }
     if (changeRight && !changeBottom) {
-      newWidth = pos.x - pos.offsetX;
+      newWidth = pos.x - pos.initX;
       if (changeTop) {
-        newHeight = pos.h - pos.y + pos.offsetY;
+        newHeight = pos.h - pos.y + pos.initY;
       }
     }
     if (changeRight && changeBottom) {
-      newWidth = pos.x - pos.offsetX;
-      newHeight = pos.y - pos.offsetY;
+      newWidth = pos.x - pos.initX;
+      newHeight = pos.y - pos.initY;
     }
     if (changeLeft && !changeTop) {
-      newWidth =  pos.w - pos.x + pos.offsetX;
+      newWidth =  pos.w - pos.x + pos.initX;
     }
     if (changeTop && !changeLeft) {
-      newHeight =  pos.h - pos.y + pos.offsetY;
+      newHeight =  pos.h - pos.y + pos.initY;
     }
     if (changeTop && changeLeft) {
-      newWidth =  pos.w - pos.x + pos.offsetX;
-      newHeight =  pos.h - pos.y + pos.offsetY;
+      newWidth =  pos.w - pos.x + pos.initX;
+      newHeight =  pos.h - pos.y + pos.initY;
     }
     this.moveitService.draggable.style.height = newHeight + 'px';
     this.moveitService.draggable.style.width = newWidth + 'px';
 
-    const movingDim: IResizable = {
+    const movingDim: IPosition = {
       item: this.moveitService.draggable,
-      width: newWidth,
-      height: newHeight,
-      offsetX: translateX,
-      offsetY: translateY
+      w: newWidth,
+      h: newHeight,
+      x: translateX,
+      y: translateY
     };
     this.mResizeMove.emit(movingDim);
   }

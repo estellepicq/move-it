@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { IDimensions, IBounds, IPosition, IDraggable } from './move-it-types';
+import { IDimensions, IBounds, IPosition } from './move-it-types';
 
 @Injectable()
 export class MoveItService {
@@ -27,12 +27,8 @@ export class MoveItService {
   }
 
   getContainerDimensions(bounds: HTMLElement): void {
-    const borderLeftWidth = window.getComputedStyle(bounds).borderLeftWidth !== '' ?
-      parseInt(window.getComputedStyle(bounds).borderLeftWidth, 10) :
-      0;
-    const borderTopWidth = window.getComputedStyle(bounds).borderTopWidth !== '' ?
-      parseInt(window.getComputedStyle(bounds).borderTopWidth, 10) :
-      0;
+    const borderLeftWidth = window.getComputedStyle(bounds).borderLeftWidth !== '' ? parseInt(window.getComputedStyle(bounds).borderLeftWidth, 10) : 0;
+    const borderTopWidth = window.getComputedStyle(bounds).borderTopWidth !== '' ? parseInt(window.getComputedStyle(bounds).borderTopWidth, 10) : 0;
     const containerRect = bounds.getBoundingClientRect();
     this.containerDimensions = {
       left: borderLeftWidth + containerRect.left,
@@ -49,30 +45,6 @@ export class MoveItService {
       boundTop: -this.draggableDimensions.top,
       boundBottom: this.containerDimensions.height - this.draggableDimensions.height - this.draggableDimensions.top,
     };
-  }
-
-  move(leftPos: number, topPos: number, columnWidth: number): IDraggable {
-    // Check bounds
-    const checkedPos = this.checkBounds(leftPos, topPos, columnWidth);
-
-    const movingPos: IDraggable = {
-      item: this.draggable,
-      initX: this.draggableDimensions.left,
-      initY: this.draggableDimensions.top,
-      offsetX: checkedPos.x,
-      offsetY: checkedPos.y
-    };
-
-    // Move draggable element
-    const translateX = 'translateX(' + leftPos + 'px) ';
-    const translateY = 'translateY(' + topPos + 'px)';
-    this.draggable.style.transform = translateX + translateY;
-
-    const shadowFilter = 'drop-shadow(rgba(0, 0, 0, 0.2) ' + (movingPos.offsetX - leftPos) + 'px ' +
-      (movingPos.offsetY - topPos) + 'px 0px)';
-    this.draggable.style.filter = shadowFilter;
-
-    return movingPos;
   }
 
   checkBounds(leftPos: number, topPos: number, columnWidth: number): IPosition {
