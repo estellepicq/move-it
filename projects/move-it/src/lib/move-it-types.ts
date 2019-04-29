@@ -7,6 +7,7 @@ export interface IPosition {
   initY?: number;
   item?: HTMLElement;
   resizeHandle?: string;
+  shadow?: HTMLElement;
 }
 
 export interface IDimensions {

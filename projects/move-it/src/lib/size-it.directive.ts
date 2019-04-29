@@ -68,8 +68,8 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
             // Get mouse position
             const mmClientX = mmEvent instanceof MouseEvent ? mmEvent.clientX : mmEvent.touches[0].clientX;
             const mmClientY = mmEvent instanceof MouseEvent ? mmEvent.clientY : mmEvent.touches[0].clientY;
-            const movingX = mmClientX - this.moveitService.containerDimensions.left - this.moveitService.draggableDimensions.left;
-            const movingY = mmClientY - this.moveitService.containerDimensions.top + this.bounds.scrollTop - this.moveitService.draggableDimensions.top;
+            const movingX = mmClientX - this.moveitService.containerDimensions.left + this.scrollableContainer.scrollLeft - this.moveitService.draggableDimensions.left;
+            const movingY = mmClientY - this.moveitService.containerDimensions.top + this.scrollableContainer.scrollTop - this.moveitService.draggableDimensions.top;
 
             // Build pos object
             const pos: IPosition = {
@@ -80,13 +80,14 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
               h: mdPos.h,
               initX: mdPos.x,
               initY: mdPos.y,
+              shadow: mdPos.shadow
             };
             return pos; // This observable is listened in "resizeSub"
           }),
 
           // Stop listening on mouseup
           takeUntil(this.stop$.pipe(
-            tap(() => this.onMouseUp())
+            tap(() => this.onMouseUp(mdPos.shadow))
           ))
         );
       }),
@@ -110,33 +111,57 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     const initX = this.moveitService.getOffsetX();
     const initY = this.moveitService.getOffsetY();
 
+    // SHADOW
+    const draggableStyle = window.getComputedStyle(this.moveitService.draggable);
+    const shadowElt = document.createElement('div');
+    // Apply draggable styles
+    shadowElt.style.transform = draggableStyle.transform;
+    shadowElt.style.top = draggableStyle.top;
+    shadowElt.style.left = draggableStyle.left;
+    shadowElt.style.width = draggableStyle.width;
+    shadowElt.style.height = draggableStyle.height;
+    // Add a resize-shadow class
+    shadowElt.setAttribute('class', 'draggable resize-shadow');
+    this.bounds.appendChild(shadowElt);
+
     // Build start dimensions object
     const startDim: IPosition = {
       item: this.moveitService.draggable,
       w: initW,
       h: initH,
       x: initX,
-      y: initY
+      y: initY,
+      shadow: shadowElt
     };
     this.mResizeStart.emit(startDim);
 
     return startDim;
   }
 
-  onMouseUp(): void {
+  onMouseUp(shadow: HTMLElement): void {
     this.moveitService.clearSelection();
     document.body.classList.remove('no-select', 'resizing');
+    // Reset dimensions
     this.moveitService.initDraggableDimensions();
     this.moveitService.getBounds();
 
+    // Copy shadow styles to element
+    this.moveitService.draggable.style.width = shadow.style.width;
+    this.moveitService.draggable.style.height = shadow.style.height;
+    this.moveitService.draggable.style.transform = shadow.style.transform;
+
+    // Build final dimensions object
     const finalDim: IPosition = {
       item: this.moveitService.draggable,
-      w: parseInt(this.moveitService.draggable.style.width, 10),
-      h: parseInt(this.moveitService.draggable.style.height, 10),
+      w: parseInt(shadow.style.width, 10),
+      h: parseInt(shadow.style.height, 10),
       x: this.moveitService.getOffsetX(),
       y: this.moveitService.getOffsetY()
     };
     this.mResizeStop.emit(finalDim);
+
+    // Remove shadow
+    this.bounds.removeChild(shadow);
   }
 
   resize(pos: IPosition) {
@@ -146,86 +171,105 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
     const changeBottom = pos.resizeHandle === 'resize-handle-se' || pos.resizeHandle === 'resize-handle-s' || pos.resizeHandle === 'resize-handle-sw';
 
     // snap to grid
-    pos.x = Math.round(pos.x / this.columnWidth) * this.columnWidth;
-    pos.y = Math.round(pos.y / this.columnWidth) * this.columnWidth;
+    let snappedX = Math.round(pos.x / this.columnWidth) * this.columnWidth;
+    let snappedY = Math.round(pos.y / this.columnWidth) * this.columnWidth;
 
     // min width
-    if (changeRight && pos.x < this.minWidth + pos.initX) {
-      pos.x = this.minWidth + pos.initX;
+    if (changeRight && snappedX < this.minWidth + pos.initX) {
+      snappedX = this.minWidth + pos.initX;
     }
-    if (changeLeft && pos.x > pos.w - this.minWidth + pos.initX) {
-      pos.x = pos.w - this.minWidth + pos.initX;
+    if (changeLeft && snappedX > pos.w - this.minWidth + pos.initX) {
+      snappedX = pos.w - this.minWidth + pos.initX;
     }
     // min height
-    if (changeBottom && pos.y < this.minHeight + pos.initY) {
-      pos.y = this.minHeight + pos.initY;
+    if (changeBottom && snappedY < this.minHeight + pos.initY) {
+      snappedY = this.minHeight + pos.initY;
     }
-    if (changeTop && pos.y > pos.h - this.minHeight + pos.initY) {
-      pos.y = pos.h - this.minHeight + pos.initY;
+    if (changeTop && snappedY > pos.h - this.minHeight + pos.initY) {
+      snappedY = pos.h - this.minHeight + pos.initY;
     }
 
-    let translateX: number = changeLeft ? pos.x : pos.initX;
-    let translateY: number = changeTop ? pos.y : + pos.initY;
+    let snappedTranslateX: number = changeLeft ? snappedX : pos.initX;
+    let snappedTranslateY: number = changeTop ? snappedY : pos.initY;
+    const freeTranslateX: number = changeLeft ? pos.x : pos.initX;
+    const freeTranslateY: number = changeTop ? pos.y : pos.initY;
     // left bound
-    if (this.moveitService.draggableDimensions.left + pos.x < 0) {
-      pos.x = -(this.moveitService.draggableDimensions.left);
-      translateX = pos.x;
+    if (this.moveitService.draggableDimensions.left + snappedX < 0) {
+      snappedX = -(this.moveitService.draggableDimensions.left);
+      snappedTranslateX = snappedX;
     }
     // top bound
-    if (this.moveitService.draggableDimensions.top + pos.y < 0) {
-      pos.y = -(this.moveitService.draggableDimensions.top);
-      translateY = pos.y;
+    if (this.moveitService.draggableDimensions.top + snappedY < 0) {
+      snappedY = -(this.moveitService.draggableDimensions.top);
+      snappedTranslateY = snappedY;
     }
     // right bound
-    if (pos.x > this.moveitService.containerDimensions.width - this.moveitService.draggableDimensions.left) {
-      pos.x = this.moveitService.containerDimensions.width - this.moveitService.draggableDimensions.left;
+    if (snappedX > this.moveitService.containerDimensions.width - this.moveitService.draggableDimensions.left) {
+      snappedX = this.moveitService.containerDimensions.width - this.moveitService.draggableDimensions.left;
     }
     // bottom bound
-    if (pos.y > this.moveitService.containerDimensions.height - this.moveitService.draggableDimensions.top) {
-      pos.y = this.moveitService.containerDimensions.height - this.moveitService.draggableDimensions.top;
+    if (snappedY > this.moveitService.containerDimensions.height - this.moveitService.draggableDimensions.top) {
+      snappedY = this.moveitService.containerDimensions.height - this.moveitService.draggableDimensions.top;
     }
 
-    // translate
-    this.moveitService.draggable.style.transform = 'translateX(' + translateX + 'px) translateY(' + translateY + 'px)';
-
     // Handle width and height
-    let newWidth: number = pos.w;
-    let newHeight: number = pos.h;
+    let snappedWidth: number = pos.w;
+    let snappedHeight: number = pos.h;
+    let freeWidth: number = pos.w;
+    let freeHeight: number = pos.h;
     if (changeBottom && !changeRight) {
-      newHeight = pos.y - pos.initY;
+      snappedHeight = snappedY - pos.initY;
+      freeHeight = pos.y - pos.initY;
       if (changeLeft) {
-        newWidth = pos.w - pos.x + pos.initX;
+        snappedWidth = pos.w - snappedX + pos.initX;
+        freeWidth = pos.w - pos.x + pos.initX;
       }
     }
     if (changeRight && !changeBottom) {
-      newWidth = pos.x - pos.initX;
+      snappedWidth = snappedX - pos.initX;
+      freeWidth = pos.x - pos.initX;
       if (changeTop) {
-        newHeight = pos.h - pos.y + pos.initY;
+        snappedHeight = pos.h - snappedY + pos.initY;
+        freeHeight = pos.h - pos.y + pos.initY;
       }
     }
     if (changeRight && changeBottom) {
-      newWidth = pos.x - pos.initX;
-      newHeight = pos.y - pos.initY;
+      snappedWidth = snappedX - pos.initX;
+      snappedHeight = snappedY - pos.initY;
+      freeWidth = pos.x - pos.initX;
+      freeHeight = pos.y - pos.initY;
     }
     if (changeLeft && !changeTop) {
-      newWidth =  pos.w - pos.x + pos.initX;
+      snappedWidth = pos.w - snappedX + pos.initX;
+      freeWidth = pos.w - pos.x + pos.initX;
     }
     if (changeTop && !changeLeft) {
-      newHeight =  pos.h - pos.y + pos.initY;
+      snappedHeight = pos.h - snappedY + pos.initY;
+      freeHeight = pos.h - pos.y + pos.initY;
     }
     if (changeTop && changeLeft) {
-      newWidth =  pos.w - pos.x + pos.initX;
-      newHeight =  pos.h - pos.y + pos.initY;
+      snappedWidth = pos.w - snappedX + pos.initX;
+      snappedHeight = pos.h - snappedY + pos.initY;
+      freeWidth = pos.w - pos.x + pos.initX;
+      freeHeight = pos.h - pos.y + pos.initY;
     }
-    this.moveitService.draggable.style.height = newHeight + 'px';
-    this.moveitService.draggable.style.width = newWidth + 'px';
+
+    // Apply snap-on-grid style to shadow element
+    pos.shadow.style.height = snappedHeight + 'px';
+    pos.shadow.style.width = snappedWidth + 'px';
+    pos.shadow.style.transform = 'translateX(' + snappedTranslateX + 'px) translateY(' + snappedTranslateY + 'px)';
+
+    // Apply free-style to draggable element
+    this.moveitService.draggable.style.height = freeHeight + 'px';
+    this.moveitService.draggable.style.width = freeWidth + 'px';
+    this.moveitService.draggable.style.transform = 'translateX(' + freeTranslateX + 'px) translateY(' + freeTranslateY + 'px)';
 
     const movingDim: IPosition = {
       item: this.moveitService.draggable,
-      w: newWidth,
-      h: newHeight,
-      x: translateX,
-      y: translateY
+      w: snappedWidth,
+      h: snappedHeight,
+      x: snappedTranslateX,
+      y: snappedTranslateY
     };
     this.mResizeMove.emit(movingDim);
   }

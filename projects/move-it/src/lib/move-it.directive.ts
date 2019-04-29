@@ -167,7 +167,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     // Return position
     return {
       x: mmX,
-      y: mmY + this.bounds.scrollTop,
+      y: mmY + this.scrollableContainer.scrollTop,
     };
   }
 
