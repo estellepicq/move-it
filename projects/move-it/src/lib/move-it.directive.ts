@@ -52,7 +52,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
 
     // Get dimensions
     setTimeout(() => {
-      this.moveitService.getContainerDimensions(this.bounds);
+      this.moveitService.getContainerDimensions(this.bounds, this.scrollableContainer);
       this.moveitService.initDraggableDimensions();
       this.moveitService.draggableLeftRatio = 0;
       this.moveitService.draggableTopRatio = 0;
@@ -88,7 +88,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     // Listen to window resize observable
     this.windowResizeSub = this.windowResize$.subscribe(() => {
       // Get container dimensions
-      this.moveitService.getContainerDimensions(this.bounds);
+      this.moveitService.getContainerDimensions(this.bounds, this.scrollableContainer);
       this.moveitService.initDraggableDimensions();
       // Get container bounds
       this.moveitService.getBounds();
@@ -146,8 +146,8 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
     // Get pointer start position and return it
     const mdX = mdEvent instanceof MouseEvent ? mdEvent.pageX : mdEvent.touches[0].pageX;
     const mdY = mdEvent instanceof MouseEvent ? mdEvent.pageY : mdEvent.touches[0].pageY;
-    const initX = mdX - this.moveitService.getOffsetX();
-    const initY = mdY - this.moveitService.getOffsetY();
+    const initX = mdX - this.moveitService.getOffsetX() * this.scale + this.scrollableContainer.scrollLeft;
+    const initY = mdY - this.moveitService.getOffsetY() * this.scale + this.scrollableContainer.scrollTop;
 
     // Emit draggable start position
     const startPos: IPosition = {
@@ -166,7 +166,7 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
 
     // Return position
     return {
-      x: mmX,
+      x: mmX + this.scrollableContainer.scrollLeft,
       y: mmY + this.scrollableContainer.scrollTop,
     };
   }
@@ -230,8 +230,10 @@ export class MoveItDirective implements AfterViewInit, OnDestroy, OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     // new pages added to dashboard or dezoomed dashboard
-    if (changes.dashboardDimensionsChanged && !changes.dashboardDimensionsChanged.firstChange) {
-      this.moveitService.getContainerDimensions(this.bounds);
+    if (changes.dashboardDimensionsChanged &&
+      !changes.dashboardDimensionsChanged.firstChange &&
+      changes.dashboardDimensionsChanged.previousValue !== changes.dashboardDimensionsChanged.currentValue) {
+      this.moveitService.getContainerDimensions(this.bounds, this.scrollableContainer);
       this.moveitService.initDraggableDimensions();
       this.moveitService.getBounds();
       this.moveitService.draggableLeftRatio = this.moveitService.getOffsetX() / this.moveitService.containerDimensions.width;

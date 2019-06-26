@@ -26,13 +26,13 @@ export class MoveItService {
     };
   }
 
-  getContainerDimensions(bounds: HTMLElement): void {
+  getContainerDimensions(bounds: HTMLElement, scrollableContainer: HTMLElement): void {
     const borderLeftWidth = window.getComputedStyle(bounds).borderLeftWidth !== '' ? parseInt(window.getComputedStyle(bounds).borderLeftWidth, 10) : 0;
     const borderTopWidth = window.getComputedStyle(bounds).borderTopWidth !== '' ? parseInt(window.getComputedStyle(bounds).borderTopWidth, 10) : 0;
     const containerRect = bounds.getBoundingClientRect();
     this.containerDimensions = {
-      left: borderLeftWidth + containerRect.left,
-      top: borderTopWidth + containerRect.top,
+      left: borderLeftWidth + containerRect.left + scrollableContainer.scrollLeft,
+      top: borderTopWidth + containerRect.top + scrollableContainer.scrollTop,
       width: bounds.clientWidth,
       height: bounds.scrollHeight
     };

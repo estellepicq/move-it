@@ -39,7 +39,7 @@ export class SizeItDirective implements AfterViewInit, OnDestroy {
   ) { }
 
   ngAfterViewInit() {
-    // Create handle
+    // Create handles
     const resizeHandles = this.createHandles();
 
     // Create event listeners
