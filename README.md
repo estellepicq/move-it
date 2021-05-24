@@ -3,8 +3,6 @@
 Drag & Drop & Resize enabled with Angular directives.
 Chrome and Firefox compatible.
 
-[Demo](http://moveit.estellepicq.com/)
-
 ## Table of contents 
 1. [Installation](#installation)
 2. [Draggable](#draggable)
