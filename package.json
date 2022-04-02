@@ -3,7 +3,8 @@
   "version": "0.1.1",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve demo --port 4201",
+    "start:demo": "ng serve demo --port 4201",
+    "start:course": "ng serve course --port 4202",
     "build:demo": "ng build demo --prod",
     "build:js": "ng build --prod move-it",
     "copy-css": "cp ./projects/move-it/src/lib/move-it.css ./dist/move-it/lib",
@@ -20,14 +21,17 @@
   "private": false,
   "dependencies": {
     "@angular/animations": "^13.3.1",
+    "@angular/cdk": "^13.3.2",
     "@angular/common": "^13.3.1",
     "@angular/compiler": "^13.3.1",
     "@angular/core": "^13.3.1",
     "@angular/forms": "^13.3.1",
+    "@angular/material": "^13.3.2",
     "@angular/platform-browser": "^13.3.1",
     "@angular/platform-browser-dynamic": "^13.3.1",
     "@angular/router": "^13.3.1",
     "core-js": "^3.21.1",
+    "ngx-markdown": "^13.1.0",
     "rxjs": "^7.5.5",
     "zone.js": "^0.11.5"
   },

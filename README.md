@@ -126,9 +126,19 @@ Use `ngSizeit` directive to make the DOM element resizable.
 You can clone this repo and launch the demo page on your local machine:
 ```bash
 npm install
-npm run build:lib
-npm run start
 ```
+```bash
+npm run build:lib
+```
+To launch the demo:
+```bash
+npm run start:demo
+```
+To launch the course:
+```bash
+npm run start:course
+```
+
 
 The demo page server is listening to: http://localhost:4201
 

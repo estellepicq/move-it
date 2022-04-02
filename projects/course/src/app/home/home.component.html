@@ -1,0 +1,10 @@
+<mat-tab-group [selectedIndex]="selectedTabIndex" (selectedTabChange)="onTabSelected($event)">
+  <mat-tab label="Common RxJS examples">
+    <markdown lineNumbers [start]="5" [src]="'assets/rxjs/commonUseCases.md'">
+    </markdown>
+  </mat-tab>
+  <mat-tab label="Drag & Drop Example"> Course part 2 </mat-tab>
+  <mat-tab label="Sandbox">
+    <app-sandbox></app-sandbox>
+  </mat-tab>
+</mat-tab-group>

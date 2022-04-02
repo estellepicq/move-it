@@ -136,6 +136,111 @@
           }
         }
       }
+    },
+    "course": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        },
+        "@schematics/angular:application": {
+          "strict": true
+        }
+      },
+      "root": "projects/course",
+      "sourceRoot": "projects/course/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist/course",
+            "index": "projects/course/src/index.html",
+            "main": "projects/course/src/main.ts",
+            "polyfills": "projects/course/src/polyfills.ts",
+            "tsConfig": "projects/course/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/course/src/favicon.ico",
+              "projects/course/src/assets"
+            ],
+            "styles": [
+              "projects/course/src/styles.scss"
+            ],
+            "scripts": [
+              "node_modules/marked/marked.min.js"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/course/src/environments/environment.ts",
+                  "with": "projects/course/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "course:build:production"
+            },
+            "development": {
+              "browserTarget": "course:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "browserTarget": "course:build"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/course/src/test.ts",
+            "polyfills": "projects/course/src/polyfills.ts",
+            "tsConfig": "projects/course/tsconfig.spec.json",
+            "karmaConfig": "projects/course/karma.conf.js",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/course/src/favicon.ico",
+              "projects/course/src/assets"
+            ],
+            "styles": [
+              "projects/course/src/styles.scss"
+            ],
+            "scripts": []
+          }
+        }
+      }
     }
   },
   "defaultProject": "move-it"

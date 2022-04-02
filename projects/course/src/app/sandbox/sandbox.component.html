@@ -1,0 +1,12 @@
+<div class="input-container">
+    <mat-form-field>
+        <mat-label>Favorite food</mat-label>
+        <input matInput [formControl]="foodCtrl" name="favorite-food"/>
+    </mat-form-field>
+</div>
+
+
+<div class="result-container">
+    <h3>Output</h3>
+    <span [innerText]="output"></span>
+</div>
