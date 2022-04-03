@@ -39,7 +39,6 @@
               "optimization": true,
               "outputHashing": "all",
               "sourceMap": false,
-              "extractCss": true,
               "namedChunks": false,
               "aot": true,
               "extractLicenses": true,
@@ -165,10 +164,14 @@
               "projects/course/src/assets"
             ],
             "styles": [
-              "projects/course/src/styles.scss"
+              "projects/course/src/styles.scss",
+              "node_modules/prismjs/themes/prism-okaidia.css"
             ],
             "scripts": [
-              "node_modules/marked/marked.min.js"
+              "node_modules/marked/marked.min.js",
+              "node_modules/prismjs/prism.js",
+              "node_modules/prismjs/components/prism-typescript.min.js",
+              "node_modules/prismjs/components/prism-css.min.js"
             ]
           },
           "configurations": {

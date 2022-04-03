@@ -11,12 +11,16 @@ import { HomeComponent } from './home/home.component';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { ReactiveFormsModule } from '@angular/forms';
+import { DragDropComponent } from './drag-drop/drag-drop.component';
+import { DragDropSandboxComponent } from './drag-drop-sandbox/drag-drop-sandbox.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     SandboxComponent,
-    HomeComponent
+    HomeComponent,
+    DragDropComponent,
+    DragDropSandboxComponent
   ],
   imports: [
     BrowserModule,
