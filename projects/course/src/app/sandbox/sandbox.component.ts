@@ -1,5 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
+import { concatMap, exhaustMap, map, mergeMap, Observable, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-sandbox',
@@ -8,12 +10,18 @@ import { FormControl } from '@angular/forms';
 })
 export class SandboxComponent implements OnInit {
 
-  public foodCtrl: FormControl = new FormControl('');
+  public ctrl: FormControl = new FormControl('');
   public output: string = '';
 
-  constructor() { }
+  constructor(
+    private readonly http: HttpClient
+  ) { }
 
   ngOnInit(): void {
+  }
+
+  private getData(search: string): Observable<any> {
+    return this.http.get('https://jsonplaceholder.typicode.com/users', { params: {username: search}});
   }
 
 }
